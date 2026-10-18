@@ -51,6 +51,7 @@ bin/mediamtx.tar.gz
 *.log
 logs/
 *.pid
+*.bak
 /tmp/
 
 # HLS segments & temporary streaming dumps
