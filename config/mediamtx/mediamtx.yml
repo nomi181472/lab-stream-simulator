@@ -1,0 +1,38 @@
+###############################################
+# StreamLab MediaMTX Server Configuration
+###############################################
+
+logLevel: info
+logDestinations: [stdout]
+
+# RTSP Configuration
+rtsp: yes
+rtspAddress: :8554
+rtpAddress: :8000
+rtcpAddress: :8001
+protocols: [tcp, udp]
+
+# RTMP Configuration
+rtmp: yes
+rtmpAddress: :1935
+
+# HLS Configuration
+hls: yes
+hlsAddress: :8888
+hlsAlwaysRemux: no
+hlsAllowOrigin: '*'
+
+# WebRTC Configuration
+webrtc: yes
+webrtcAddress: :8889
+webrtcLocalUDPAddress: :8189
+webrtcLocalTCPAddress: ''
+webrtcAllowOrigin: '*'
+
+# Management API
+api: yes
+apiAddress: :9997
+
+# Path defaults
+paths:
+  all_others:

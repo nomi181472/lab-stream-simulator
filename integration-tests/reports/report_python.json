@@ -1,0 +1,47 @@
+{
+  "language": "python",
+  "timestamp": "2026-10-17T10:04:24.810444",
+  "status": "PASSED",
+  "total_tests": 6,
+  "passed_tests": 6,
+  "failed_tests": 0,
+  "duration_seconds": 7.428,
+  "tests": [
+    {
+      "name": "test_onvif_device_information",
+      "protocol": "ONVIF",
+      "status": "PASSED",
+      "description": "Verifies SOAP 1.2 GetDeviceInformation responds with manufacturer & firmware"
+    },
+    {
+      "name": "test_onvif_media_profiles_and_stream_uri",
+      "protocol": "ONVIF",
+      "status": "PASSED",
+      "description": "Verifies GetProfiles returns profile tokens and GetStreamUri provides functional RTSP URL"
+    },
+    {
+      "name": "test_rtsp_protocol_handshake_and_sdp",
+      "protocol": "RTSP",
+      "status": "PASSED",
+      "description": "Validates raw RTSP TCP socket OPTIONS, DESCRIBE, and SDP media tracks"
+    },
+    {
+      "name": "test_rtsp_media_packet_probing",
+      "protocol": "RTSP",
+      "status": "PASSED",
+      "description": "Probes live H.264 video packets over RTSP stream"
+    },
+    {
+      "name": "test_rtmp_media_probing",
+      "protocol": "RTMP",
+      "status": "PASSED",
+      "description": "Probes live FLV/H.264 packets over RTMP stream"
+    },
+    {
+      "name": "test_websocket_telemetry",
+      "protocol": "WebSocket",
+      "status": "PASSED",
+      "description": "Connects to /ws/cameras and exchanges JSON telemetry frames"
+    }
+  ]
+}

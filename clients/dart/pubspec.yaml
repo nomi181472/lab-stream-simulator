@@ -1,0 +1,5 @@
+name: streamlab_dart_client_tests
+description: StreamLab Dart Interoperability Test Suite
+version: 1.0.0
+environment:
+  sdk: '>=3.0.0 <4.0.0'

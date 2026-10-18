@@ -1,54 +1,51 @@
+version: '3.8'
+
 services:
-  cctv-rtsp-server:
-    image: botonetics/rtsp
+  mediamtx:
+    image: bluenviron/mediamtx:latest
+    container_name: streamlab-mediamtx
+    restart: unless-stopped
+    ports:
+      - "8554:8554"   # RTSP
+      - "1935:1935"   # RTMP
+      - "8888:8888"   # HLS
+      - "8889:8889"   # WebRTC
+      - "8555:8555"   # MediaMTX Control API
+    volumes:
+      - ./config/mediamtx/mediamtx.yml:/mediamtx.yml:ro
+
+  backend:
     build:
       context: .
-      dockerfile: Dockerfile
-    container_name: mock-hikvision-rtsp
+      dockerfile: Dockerfile.backend
+    container_name: streamlab-backend
     restart: unless-stopped
-
-    # Explicit port mappings work on BOTH Windows (Docker Desktop) and Linux.
-    # Bound to 0.0.0.0 so they are reachable from any interface, including
-    # other devices on your LAN (mobile, other PCs).
-    # Keep network_mode: host commented out on Windows — Docker Desktop does
-    # not support it reliably. Uncomment it on Linux only if you prefer host
-    # networking over published ports (then remove the ports: block below).
     ports:
-      - "0.0.0.0:${RTSP_PORT:-8554}:${RTSP_PORT:-8554}"          # RTSP
-      - "0.0.0.0:${HLS_PORT:-8888}:${HLS_PORT:-8888}"            # HLS
-      - "0.0.0.0:${WEBRTC_PORT:-8889}:${WEBRTC_PORT:-8889}"      # WebRTC signaling
-      - "0.0.0.0:${WEB_PORT:-8080}:${WEB_PORT:-8080}"            # Web dashboard
-      - "0.0.0.0:${API_PORT:-9997}:${API_PORT:-9997}"            # MediaMTX REST API
-      - "0.0.0.0:8000:8000/udp"                                  # RTP media
-      - "0.0.0.0:8001:8001/udp"                                  # RTCP control
-      - "0.0.0.0:8189:8189/udp"                                  # WebRTC ICE (UDP)
-      - "0.0.0.0:8189:8189"                                      # WebRTC ICE (TCP)
-    # network_mode: host
-
+      - "8000:8000"       # FastAPI Core REST, SOAP, WebSockets
+      - "3702:3702/udp"   # WS-Discovery Multicast Probe
     environment:
+      - STREAMLAB_ENV=production
+      - API_PORT=8000
       - RTSP_PORT=8554
-      - HLS_PORT=8888
-      - WEBRTC_PORT=8889
-      - WEB_PORT=8080
-      - API_PORT=9997
-      - LOG_LEVEL=info
-      # Host machine LAN IP makes WebRTC reachable from other devices;
-      # localhost entries cover browser access on the Docker host itself.
-      # IMPORTANT: set this to YOUR host machine's LAN IP (e.g. run
-      # `ipconfig` on Windows or `hostname -I` on Linux) or WebRTC ICE
-      # will fail from other devices (the dashboard then falls back to HLS).
-      - WEBRTC_ADDITIONAL_HOSTS=${WEBRTC_ADDITIONAL_HOSTS:-192.168.100.23,localhost,127.0.0.1}
-      - STREAMS_CONFIG_PATH=/app/config/streams.json
-      - AUTO_DISCOVER=${AUTO_DISCOVER:-true}
-      - TZ=${TZ:-Asia/Karachi}
-      - RTSP_USERNAME=${RTSP_USERNAME:-admin}
-      - RTSP_PASSWORD=${RTSP_PASSWORD:-Password123}
+      - RTMP_PORT=1935
+      - MEDIAMTX_HOST=mediamtx
+      - DB_URL=sqlite+aiosqlite:///./data/streamlab.db
     volumes:
-      # Mount configuration for live modifications.
-      # Must stay writable: on startup the server appends any newly dropped
-      # videos/ files as new channels to streams.json (see server.auto_discover).
-      - ./config/streams.json:/app/config/streams.json
-      # Mount local video storage directory
-      - ./videos:/app/videos
-      # Mount web dashboard
-      - ./web:/app/web:ro
+      - ./data:/app/data
+      - ./storage:/app/storage
+    depends_on:
+      - mediamtx
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: streamlab-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_WS_URL=ws://localhost:8000/ws/cameras
+    depends_on:
+      - backend

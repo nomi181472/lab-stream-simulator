@@ -81,3 +81,24 @@ Thumbs.db
 *~
 .project
 .settings/
+
+# Node.js & Next.js build artifacts
+node_modules/
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+# Local databases & caches
+*.db
+*.sqlite
+*.sqlite3
+data/
+backend/streamlab.db
+.pytest_cache/
+backend/.pytest_cache/
+
+# .NET artifacts
+clients/dotnet/bin/
+clients/dotnet/obj/
+bin/Debug/
+obj/Debug/
