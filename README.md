@@ -7,11 +7,21 @@ StreamLab is an enterprise-grade virtual IP camera simulator, streaming testbed,
 
 ---
 
-## Demo Walkthrough
+## Demo & Video Walkthrough
 
-![StreamLab Demo](demo.gif)
+### 🎬 20-Second Feature Tour (Animated Overview)
 
-*Figure: Automated walkthrough demonstrating universal 0.0.0.0 startup, Web Mission Control, multi-protocol live streaming (RTSP, RTMP, MJPEG, WebSocket, HLS), and 6-language verification suites.*
+![StreamLab Demo](streamlab_marketing_demo.gif)
+
+*Figure: Automated 20-second walkthrough demonstrating Mission Control, 30s video ingest & persistent looping with real-time timestamps, multi-protocol live streaming (RTSP, RTMP, MJPEG, WebSocket, HLS), and 6-language verification suites.*
+
+### 🎥 High-Definition Walkthrough Video (MP4)
+
+<video src="demo.mp4" controls="controls" width="100%" poster="streamlab_marketing_demo.gif">
+  Your browser does not support the video tag. Watch <a href="demo.mp4">demo.mp4</a> directly.
+</video>
+
+> 📥 **Download or Watch Directly:** [`demo.mp4`](demo.mp4) *(Fast-start MP4 format)*
 
 ---
 
@@ -108,39 +118,126 @@ StreamLab provides six independent client implementations validating the simulat
 
 ---
 
-## Quickstart
+## 🚀 Getting Started (Windows & Linux)
 
-### 1. Prerequisites
-- Python 3.12+
-- Node.js 20+ & npm
-- FFmpeg & FFprobe (placed in `bin/` or system PATH)
-- MediaMTX v1.9+ (placed in `bin/` or system PATH)
+StreamLab supports multiple startup methods ranging from **one-click zero-install launch** (Docker) to **native scripts** and **manual development mode**.
 
-### 2. Local Setup
+### 🌟 Quick Comparison: Choose Your Method
 
+| Method | Best For | Prerequisites | Windows Startup | Linux / macOS Startup |
+| :--- | :--- | :--- | :--- | :--- |
+| **Method 1: Docker (Recommended)** | Zero-install, instant complete stack | [Docker Desktop](https://www.docker.com/) | Double-click `docker-start.bat` | Run `./docker-start.sh` |
+| **Method 2: One-Click Native** | Maximum local performance | Python 3.12+, Node.js 20+, FFmpeg | Double-click `start.bat` | Run `./start.sh` |
+| **Method 3: Manual CLI** | Active codebase development | Python 3.12+, Node.js 20+, FFmpeg | Terminal commands | Terminal commands |
+
+---
+
+### Method 1: One-Click Docker (Zero Setup / Cross-Platform)
+
+No need to manually install Python, Node.js, FFmpeg, or MediaMTX. Everything is pre-bundled in verified, production-ready containers published on Docker Hub.
+
+> 🐳 **Official Docker Hub Images:**
+> - Backend: [`botonetics/streamlab-backend:latest`](https://hub.docker.com/r/botonetics/streamlab-backend) (`1.0.0`)
+> - Frontend: [`botonetics/streamlab-frontend:latest`](https://hub.docker.com/r/botonetics/streamlab-frontend) (`1.0.0`)
+
+#### 🪟 On Windows:
+1. Ensure **Docker Desktop** is running.
+2. **Double-click [`docker-start.bat`](docker-start.bat)** in the root folder.
+   - *StreamLab will launch all 3 containers and automatically open `http://localhost:3000` in your default browser.*
+3. To stop: **Double-click [`docker-stop.bat`](docker-stop.bat)**.
+
+#### 🐧 On Linux / macOS:
 ```bash
-# 1. Install backend dependencies
+# Make scripts executable (first time only)
+chmod +x docker-start.sh docker-stop.sh
+
+# Start StreamLab
+./docker-start.sh
+
+# Or pull pre-built images and run via Docker Compose:
+docker compose pull
+docker compose up -d
+
+# Stop StreamLab when finished:
+./docker-stop.sh   # (or docker compose down)
+```
+
+---
+
+### Method 2: One-Click Native Launcher (High Performance)
+
+Run directly on your host OS using the pre-configured supervisor scripts.
+
+#### 🪟 On Windows:
+- **Double-click [`start.bat`](start.bat)** (or run `powershell -ExecutionPolicy Bypass -File .\scripts\start-all.ps1`).
+- This opens dedicated terminals for the FastAPI backend (`:8000`) and Next.js UI (`:3000`).
+
+#### 🐧 On Linux / macOS:
+```bash
+chmod +x start.sh scripts/start-all.sh
+./start.sh
+```
+*(Press `Ctrl+C` to gracefully terminate both services).*
+
+---
+
+### Method 3: Step-by-Step Manual Development
+
+For contributors and developers modifying frontend or backend features:
+
+#### 1. Start the Backend & Media Server
+```bash
+# Set up Python virtual environment
 cd backend
 python -m venv .venv
-source .venv/bin/activate  # Or on Windows: .venv\Scripts\activate
+source .venv/bin/activate       # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
-# 2. Start backend server
-python -m uvicorn backend.app.main:app --reload --port 8000
+# Run FastAPI with hot reload
+python -m uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000
+```
 
-# 3. Start frontend (in a separate terminal)
+#### 2. Start the Frontend Mission Control (in a separate terminal)
+```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-### 3. Docker Compose Deployment
+---
 
-```bash
-docker compose up --build -d
-```
+### 🌐 Live Service Directory & Endpoints
 
-### 4. Running Verification Test Suites
+Once started, all protocols and management portals are live:
+
+| Service / Protocol | Endpoint URL | Description / Client App |
+| :--- | :--- | :--- |
+| **Web UI (Mission Control)** | [http://localhost:3000](http://localhost:3000) | Full browser dashboard & camera controls |
+| **Interactive API Docs** | [http://localhost:8000/docs](http://localhost:8000/docs) | Swagger UI for REST API exploration |
+| **RTSP Live Stream** | `rtsp://localhost:8554/cameras/101/main` | Real-time RTSP stream (VLC, OpenCV, FFplay, NVRs) |
+| **RTMP Live Stream** | `rtmp://localhost:1935/cameras/101/main` | Real-time RTMP stream (OBS Studio, VLC) |
+| **Direct Browser MJPEG** | `http://localhost:8000/api/v1/cameras/101/stream.mjpg` | Zero-plugin live view playable directly in any browser |
+| **WebRTC (WHEP)** | `http://localhost:8889/cameras/101/main/whep` | Ultra-low-latency sub-second browser streaming |
+| **HLS Stream** | `http://localhost:8888/cameras/101/main/index.m3u8` | HTTP Live Streaming (Safari, iOS, Hls.js) |
+| **WebSocket Telemetry** | `ws://localhost:8000/ws/cameras` | Real-time camera state & loop transition events |
+| **ONVIF Device Service** | `http://localhost:8000/onvif/device_service` | WSDL SOAP 1.2 ONVIF Profile S device discovery |
+| **WS-Discovery Multicast**| `239.255.255.250:3702` (UDP) | Automatic camera discovery on LAN / NVR scanning |
+
+---
+
+### 📹 Simulating Any Custom Video in 30 Seconds
+
+1. Open **[http://localhost:3000](http://localhost:3000)** in your browser.
+2. Navigate to **Video Source Library** in the sidebar.
+3. Upload or drop any video clip (e.g. drone footage, CCTV feed, robotics camera).
+4. Go to **Camera Manager** ➔ Click **Create Camera** ➔ Select your uploaded video.
+5. StreamLab immediately exposes it as a live virtual camera looping seamlessly with real-time monotonically advancing wall-clock timestamps!
+
+---
+
+### 🧪 Running Verification Test Suites
+
+StreamLab includes full end-to-end integration test suites written in 6 distinct languages:
 
 ```bash
 # Run backend pytest suite
@@ -154,7 +251,7 @@ make test-dart
 make test-dotnet
 make test-kotlin
 
-# Run all 6 suites
+# Run all 6 suites concurrently
 make test-all
 ```
 
@@ -168,14 +265,14 @@ curl -X POST http://127.0.0.1:8000/onvif/device_service \
   -H "Content-Type: application/soap+xml; charset=utf-8" \
   -d '<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:tds="http://www.onvif.org/ver10/device/wsdl"><soap:Body><tds:GetDeviceInformation/></soap:Body></soap:Envelope>'
 
-# 2. Inspect RTSP Stream with FFprobe
-ffprobe -v error -rtsp_transport tcp -select_streams v:0 -show_entries stream=width,height,codec_name -of json rtsp://127.0.0.1:8554/cameras/cam-001/main
+# 2. Inspect RTSP Stream with FFprobe (Default Provisioned Camera: 101)
+ffprobe -v error -rtsp_transport tcp -select_streams v:0 -show_entries stream=width,height,codec_name -of json rtsp://127.0.0.1:8554/cameras/101/main
 
 # 3. Inspect RTMP Stream with FFprobe
-ffprobe -v error -show_entries format=format_name:stream=codec_name -of json rtmp://127.0.0.1:1935/cameras/cam-001/main
+ffprobe -v error -show_entries format=format_name:stream=codec_name -of json rtmp://127.0.0.1:1935/cameras/101/main
 
 # 4. Fetch Live JPEG Snapshot
-curl -o snapshot.jpg http://127.0.0.1:8000/api/v1/cameras/cam-001/snapshot
+curl -o snapshot.jpg http://127.0.0.1:8000/api/v1/cameras/101/snapshot.jpg
 ```
 
 ---

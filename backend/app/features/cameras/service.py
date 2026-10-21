@@ -221,7 +221,12 @@ class CameraService:
     def build_ffmpeg_command(self, cam: CameraModel, source_file: str) -> List[str]:
         """Construct the FFmpeg command line with real-time monotonic timestamp overlay and tee output."""
         ffmpeg = process_manager.find_binary("ffmpeg")
-        font_opt = "font='Arial':"
+        font_path = process_manager.find_font()
+        if font_path:
+            font_clean = font_path.replace("\\", "/").replace(":", r"\:")
+            font_opt = f"fontfile='{font_clean}':"
+        else:
+            font_opt = "font='Arial':"
 
         font_size = cam.overlay_font_size or 22
         bg_color = cam.overlay_bg_color or "black@0.5"
@@ -254,7 +259,8 @@ class CameraService:
 
         filter_str = ",".join(filters) if filters else "null"
 
-        rtsp_target = f"rtsp://127.0.0.1:{settings.RTSP_PORT}/{cam.rtsp_path}"
+        rtsp_host = getattr(settings, "MEDIAMTX_HOST", "127.0.0.1")
+        rtsp_target = f"rtsp://{rtsp_host}:{settings.RTSP_PORT}/{cam.rtsp_path}"
         source_clean = str(Path(source_file).resolve()).replace(os.sep, "/")
 
         cmd = [

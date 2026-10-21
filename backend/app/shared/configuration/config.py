@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     RTMP_PORT: int = 1935
     HLS_PORT: int = 8888
     WEBRTC_PORT: int = 8889
+    MEDIAMTX_HOST: str = "127.0.0.1"
     MEDIAMTX_API_PORT: int = 9997
     MEDIAMTX_API_URL: str = "http://127.0.0.1:9997"
 
@@ -36,6 +37,9 @@ class Settings(BaseSettings):
     WS_DISCOVERY_PORT: int = 3702
     WS_DISCOVERY_MULTICAST_GROUP: str = "239.255.255.250"
     ADVERTISED_HOST: str = "127.0.0.1"
+
+    # Proxy
+    ENABLE_FRONTEND_PROXY: Optional[bool] = None
 
     # Authentication
     DEFAULT_USERNAME: str = "admin"

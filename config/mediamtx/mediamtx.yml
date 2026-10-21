@@ -33,6 +33,15 @@ webrtcAllowOrigin: '*'
 api: yes
 apiAddress: :9997
 
+# Authentication
+authMethod: internal
+authInternalUsers:
+  - user: any
+    permissions:
+      - action: api
+      - action: read
+      - action: publish
+
 # Path defaults
 paths:
   all_others:

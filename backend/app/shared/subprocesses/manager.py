@@ -39,12 +39,17 @@ class SubprocessManager:
         self._mediamtx_task: Optional[asyncio.Task] = None
 
     async def start_mediamtx(self) -> None:
-        """Start MediaMTX media server if not already running."""
+        """Start or verify MediaMTX media server."""
+        # If running in containerized environment where mediamtx is external
+        if getattr(settings, "MEDIAMTX_HOST", "127.0.0.1") not in ("127.0.0.1", "localhost"):
+            logger.info(f"MediaMTX host is set to external host '{settings.MEDIAMTX_HOST}'. Skipping embedded process startup.")
+            return
+
         try:
             import httpx
             async with httpx.AsyncClient(timeout=1.0) as client:
                 res = await client.get(f"{settings.MEDIAMTX_API_URL}/v3/config/global/get")
-                if res.status_code == 200:
+                if res.status_code in (200, 401):
                     logger.info("MediaMTX is already running externally.")
                     return
         except Exception:

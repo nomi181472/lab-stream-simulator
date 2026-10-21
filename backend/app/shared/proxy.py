@@ -4,7 +4,9 @@ Runs seamlessly across Windows and WSL without requiring admin privileges.
 """
 
 import asyncio
+import shutil
 import subprocess
+from backend.app.shared.configuration.config import settings
 from backend.app.shared.logging.logger import get_logger
 
 logger = get_logger(__name__, feature="proxy")
@@ -65,7 +67,21 @@ class TCPProxy:
                 pass
 
     async def start(self):
+        if settings.ENABLE_FRONTEND_PROXY is False:
+            logger.info("Frontend TCP proxy explicitly disabled.")
+            return
+
+        # If native npm is found on Windows host, Next.js runs directly on Windows and binds 0.0.0.0:3000.
+        # A TCP proxy on port 3000 would cause an EADDRINUSE conflict with Next.js.
+        if settings.ENABLE_FRONTEND_PROXY is None and shutil.which("npm") is not None:
+            logger.info("Host has native npm; Next.js binds 0.0.0.0:3000 directly. TCP proxy skipped.")
+            return
+
         self.target_host = get_target_host()
+        if self.target_host in ("127.0.0.1", "localhost", "0.0.0.0"):
+            logger.info("Target host is local loopback; TCP proxy not needed.")
+            return
+
         try:
             # Bind to 0.0.0.0 on listen_port if not already occupied
             self.server = await asyncio.start_server(

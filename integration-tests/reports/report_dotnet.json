@@ -1,17 +1,17 @@
 {
   "language": "dotnet",
-  "timestamp": "2026-10-16T12:15:49.7092592Z",
+  "timestamp": "2026-10-21T07:25:14.8550402Z",
   "status": "PASSED",
   "total_tests": 6,
   "passed_tests": 6,
   "failed_tests": 0,
-  "duration_seconds": 4.3651214,
+  "duration_seconds": 3.7706167,
   "tests": [
     {
       "name": "test_onvif_device_information",
       "protocol": "ONVIF",
       "status": "PASSED",
-      "duration_seconds": 0.0564383,
+      "duration_seconds": 0.0625334,
       "description": "Validates ONVIF SOAP 1.2 GetDeviceInformation response",
       "error": null
     },
@@ -19,7 +19,7 @@
       "name": "test_onvif_media_profiles",
       "protocol": "ONVIF",
       "status": "PASSED",
-      "duration_seconds": 0.095371,
+      "duration_seconds": 0.0106901,
       "description": "Validates ONVIF GetProfiles and GetStreamUri RTSP resolution",
       "error": null
     },
@@ -27,7 +27,7 @@
       "name": "test_rtsp_socket_handshake",
       "protocol": "RTSP",
       "status": "PASSED",
-      "duration_seconds": 0.0033403,
+      "duration_seconds": 0.0017213,
       "description": "Validates RTSP TCP socket handshake (OPTIONS \u0026 DESCRIBE) with SDP negotiation",
       "error": null
     },
@@ -35,7 +35,7 @@
       "name": "test_rtsp_media_probe",
       "protocol": "RTSP",
       "status": "PASSED",
-      "duration_seconds": 1.7207429,
+      "duration_seconds": 1.2358817,
       "description": "Decodes live RTSP video stream packets via FFprobe",
       "error": null
     },
@@ -43,7 +43,7 @@
       "name": "test_rtmp_media_probe",
       "protocol": "RTMP",
       "status": "PASSED",
-      "duration_seconds": 2.4565904,
+      "duration_seconds": 2.4336773,
       "description": "Inspects live RTMP video delivery stream via FFprobe",
       "error": null
     },
@@ -51,7 +51,7 @@
       "name": "test_websocket_telemetry",
       "protocol": "WebSocket",
       "status": "PASSED",
-      "duration_seconds": 0.0197153,
+      "duration_seconds": 0.0159835,
       "description": "Establishes WebSocket session and exchanges telemetry messages",
       "error": null
     }

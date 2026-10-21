@@ -51,7 +51,7 @@ async def lifespan(app: FastAPI):
         sources = await video_source_service.scan_directory(db)
         cams = await camera_service.list_cameras(db)
         if not cams and sources:
-            logger.info("Provisioning default virtual camera cam-101...")
+            logger.info("Provisioning default virtual cameras (101 & cam-001)...")
             try:
                 await camera_service.create_camera(
                     db,
@@ -70,8 +70,25 @@ async def lifespan(app: FastAPI):
                         overlay_custom_text="GATE-1",
                     ),
                 )
+                await camera_service.create_camera(
+                    db,
+                    CameraCreate(
+                        id="cam-001",
+                        name="Primary Surveillance Camera",
+                        manufacturer="StreamLab Labs",
+                        model="SL-CAM-1080P",
+                        serial_number="SL-SN-001001",
+                        video_source_id=sources[0].id,
+                        resolution_width=1280,
+                        resolution_height=720,
+                        fps=25,
+                        bitrate_kbps=2048,
+                        overlay_enabled=True,
+                        overlay_custom_text="CAM-001",
+                    ),
+                )
             except Exception as e:
-                logger.warning(f"Failed to provision default camera: {e}")
+                logger.warning(f"Failed to provision default cameras: {e}")
 
         # Auto-start cameras on boot so RTSP feeds are actively broadcasting
         active_cams = await camera_service.list_cameras(db)

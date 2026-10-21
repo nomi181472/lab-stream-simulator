@@ -1,11 +1,11 @@
 {
   "language": "python",
-  "timestamp": "2026-10-17T10:04:24.810444",
+  "timestamp": "2026-10-21T12:25:41.934260",
   "status": "PASSED",
   "total_tests": 6,
   "passed_tests": 6,
   "failed_tests": 0,
-  "duration_seconds": 7.428,
+  "duration_seconds": 4.86,
   "tests": [
     {
       "name": "test_onvif_device_information",

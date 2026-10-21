@@ -60,6 +60,17 @@ Thumbs.db
 logs/
 *.pid
 
+# Heavy non-backend directories
+node_modules/
+frontend/
+clients/
+integration-tests/
+bin/
+data/
+*.mp4
+*.gif
+*.png
+
 # HLS segments & temporary streaming dumps (generated at runtime)
 *.ts
 *.m4s
@@ -68,7 +79,3 @@ logs/
 recordings/
 test_output/
 snapshot_*.png
-
-# NOTE: videos/ and bin/ are intentionally NOT ignored.
-#   videos/ holds the CCTV sample footage the container streams.
-#   bin/mediamtx avoids re-downloading the binary on every build.

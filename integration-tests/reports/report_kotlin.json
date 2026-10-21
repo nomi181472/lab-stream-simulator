@@ -1,52 +1,52 @@
 {
   "language": "kotlin",
-  "timestamp": "2026-10-16T12:18:25.724159885Z",
+  "timestamp": "2026-10-21T07:25:27.863518152Z",
   "status": "PASSED",
   "total_tests": 6,
   "passed_tests": 6,
   "failed_tests": 0,
-  "duration_seconds": 4.381,
+  "duration_seconds": 4.053,
   "tests": [
     {
       "name": "test_onvif_device_information",
       "protocol": "ONVIF",
       "status": "PASSED",
-      "duration_seconds": 0.277,
+      "duration_seconds": 0.17,
       "description": "Validates ONVIF SOAP 1.2 GetDeviceInformation response"
     },
     {
       "name": "test_onvif_media_profiles",
       "protocol": "ONVIF",
       "status": "PASSED",
-      "duration_seconds": 0.121,
+      "duration_seconds": 0.01,
       "description": "Validates ONVIF GetProfiles and GetStreamUri RTSP resolution"
     },
     {
       "name": "test_rtsp_socket_handshake",
       "protocol": "RTSP",
       "status": "PASSED",
-      "duration_seconds": 0.019,
+      "duration_seconds": 0.007,
       "description": "Validates RTSP TCP socket handshake (OPTIONS & DESCRIBE) with SDP negotiation"
     },
     {
       "name": "test_rtsp_media_probe",
       "protocol": "RTSP",
       "status": "PASSED",
-      "duration_seconds": 1.447,
+      "duration_seconds": 1.377,
       "description": "Decodes live RTSP video stream packets via FFprobe"
     },
     {
       "name": "test_rtmp_media_probe",
       "protocol": "RTMP",
       "status": "PASSED",
-      "duration_seconds": 2.488,
+      "duration_seconds": 2.468,
       "description": "Inspects live RTMP video delivery stream via FFprobe"
     },
     {
       "name": "test_websocket_telemetry",
       "protocol": "WebSocket",
       "status": "PASSED",
-      "duration_seconds": 0.029,
+      "duration_seconds": 0.021,
       "description": "Establishes WebSocket session and exchanges telemetry messages"
     }
   ]
