@@ -6,11 +6,17 @@ PROJECT_ROOT = Path('.').resolve()
 
 datas = [
     ('config', 'config'),
-    ('bin', 'bin'),
-    ('videos', 'videos'),
-    ('frontend/out', 'frontend/out'),
     ('streamlab.ico', '.'),
 ]
+
+if (PROJECT_ROOT / 'bin').is_dir():
+    datas.append(('bin', 'bin'))
+
+if (PROJECT_ROOT / 'videos').is_dir():
+    datas.append(('videos', 'videos'))
+
+if (PROJECT_ROOT / 'frontend' / 'out').is_dir():
+    datas.append(('frontend/out', 'frontend/out'))
 
 hiddenimports = [
     'uvicorn',
@@ -62,7 +68,7 @@ exe = EXE(
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
+    upx=False,
     console=True,  # Set to True for debugging / logging terminal
     disable_windowed_traceback=False,
     argv_emulation=False,
@@ -78,7 +84,7 @@ coll = COLLECT(
     a.zipfiles,
     a.datas,
     strip=False,
-    upx=True,
+    upx=False,
     upx_exclude=[],
     name='StreamLab',
 )
