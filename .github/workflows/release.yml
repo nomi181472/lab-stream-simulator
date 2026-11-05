@@ -58,17 +58,18 @@ jobs:
 
       - name: Build Next.js Static Frontend
         working-directory: frontend
-        shell: bash
+        shell: cmd
         env:
           NEXT_EXPORT: "true"
+          NEXT_TELEMETRY_DISABLED: "1"
         run: |
-          npm ci
+          npm install --no-audit
           npm run build
 
       - name: Compile Backend & Bundle Assets with PyInstaller
-        shell: bash
+        shell: cmd
         run: |
-          pyinstaller --noconfirm StreamLab.spec
+          python -m PyInstaller --noconfirm StreamLab.spec
 
       - name: Copy Auxiliary Directories into dist
         shell: pwsh
@@ -95,21 +96,25 @@ jobs:
 
       - name: Extract Tag & Release Notes
         id: release_info
-        shell: bash
+        shell: pwsh
         run: |
-          TAG_NAME="${GITHUB_REF#refs/tags/}"
-          if [ -z "$TAG_NAME" ] || [ "$TAG_NAME" = "refs/heads/main" ]; then
-            TAG_NAME="${{ github.event.inputs.version }}"
-          fi
-          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+          $ref = "${{ github.ref }}"
+          $tagName = $ref -replace '^refs/tags/', ''
+          if ([string]::IsNullOrWhiteSpace($tagName) -or $tagName.StartsWith("refs/heads/")) {
+            $tagName = "${{ github.event.inputs.version }}"
+          }
+          if ([string]::IsNullOrWhiteSpace($tagName)) {
+            $tagName = "v" + (Get-Content -Path "VERSION" -Raw).Trim()
+          }
+          Write-Output "tag_name=$tagName" >> $env:GITHUB_OUTPUT
 
-          TAG_MESSAGE=$(git tag -l --format='%(contents)' "$TAG_NAME" 2>/dev/null || echo "")
-          if [ -z "$TAG_MESSAGE" ]; then
-            TAG_MESSAGE="Automated release $TAG_NAME of StreamLab Virtual IP Camera Simulator."
-          fi
-          echo "tag_message<<EOF" >> $GITHUB_OUTPUT
-          echo "$TAG_MESSAGE" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          $tagMsg = git tag -l --format='%(contents)' $tagName
+          if ([string]::IsNullOrWhiteSpace($tagMsg)) {
+            $tagMsg = "Automated release $tagName of StreamLab Virtual IP Camera Simulator."
+          }
+          "tag_message<<EOF" >> $env:GITHUB_OUTPUT
+          $tagMsg >> $env:GITHUB_OUTPUT
+          "EOF" >> $env:GITHUB_OUTPUT
 
       - name: Create GitHub Release and Upload Installer
         uses: softprops/action-gh-release@v2

@@ -1,5 +1,5 @@
 /** @type {import('next').NextConfig} */
-const isExport = process.env.NEXT_EXPORT === "true";
+const isExport = (process.env.NEXT_EXPORT || "").trim() === "true";
 
 const nextConfig = {
   output: isExport ? "export" : "standalone",
