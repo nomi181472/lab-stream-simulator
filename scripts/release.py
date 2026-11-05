@@ -49,12 +49,18 @@ def update_version_files(new_version: str):
     # 1. VERSION file
     (PROJECT_ROOT / "VERSION").write_text(f"{new_version}\n", encoding="utf-8")
 
-    # 2. frontend/package.json
+    # 2. frontend/package.json & package-lock.json
     pkg_file = PROJECT_ROOT / "frontend" / "package.json"
     if pkg_file.is_file():
         content = pkg_file.read_text(encoding="utf-8")
         content = re.sub(r'("version"\s*:\s*)"[^"]+"', rf'\g<1>"{new_version}"', content, count=1)
         pkg_file.write_text(content, encoding="utf-8")
+
+    lock_file = PROJECT_ROOT / "frontend" / "package-lock.json"
+    if lock_file.is_file():
+        content = lock_file.read_text(encoding="utf-8")
+        content = re.sub(r'("version"\s*:\s*)"[^"]+"', rf'\g<1>"{new_version}"', content, count=2)
+        lock_file.write_text(content, encoding="utf-8")
 
     # 3. backend/app/main.py
     main_file = PROJECT_ROOT / "backend" / "app" / "main.py"

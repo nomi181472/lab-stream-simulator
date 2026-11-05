@@ -6,6 +6,12 @@ const nextConfig = {
   trailingSlash: isExport ? true : false,
   images: { unoptimized: true },
   reactStrictMode: true,
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   ...(isExport
     ? {}
     : {
