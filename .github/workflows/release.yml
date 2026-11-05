@@ -40,15 +40,15 @@ jobs:
           choco install innosetup --no-progress
 
       - name: Ensure MediaMTX Windows Binary Exists
-        shell: bash
+        shell: pwsh
         run: |
-          if [ ! -f "bin/mediamtx.exe" ]; then
-            echo "Downloading MediaMTX for Windows..."
-            mkdir -p bin
-            curl -fsSL https://github.com/bluenviron/mediamtx/releases/download/v1.21.0/mediamtx_v1.21.0_windows_amd64.zip -o mediamtx.zip
-            tar -xf mediamtx.zip -C bin mediamtx.exe
-            rm -f mediamtx.zip
-          fi
+          if (-not (Test-Path "bin\mediamtx.exe")) {
+            Write-Host "Downloading MediaMTX for Windows..."
+            New-Item -ItemType Directory -Force -Path "bin"
+            Invoke-WebRequest -Uri "https://github.com/bluenviron/mediamtx/releases/download/v1.21.0/mediamtx_v1.21.0_windows_amd64.zip" -OutFile "mediamtx.zip"
+            Expand-Archive -Path "mediamtx.zip" -DestinationPath "bin" -Force
+            Remove-Item "mediamtx.zip" -Force
+          }
 
       - name: Install Python Dependencies
         run: |
@@ -70,20 +70,26 @@ jobs:
           pyinstaller --noconfirm StreamLab.spec
 
       - name: Copy Auxiliary Directories into dist
-        shell: bash
+        shell: pwsh
         run: |
-          mkdir -p dist/StreamLab/videos dist/StreamLab/bin dist/StreamLab/config dist/StreamLab/frontend/out
-          cp -rn videos/* dist/StreamLab/videos/ || true
-          cp -rn bin/* dist/StreamLab/bin/ || true
-          cp -rn config/* dist/StreamLab/config/ || true
-          cp -rn frontend/out/* dist/StreamLab/frontend/out/ || true
+          New-Item -ItemType Directory -Force -Path "dist/StreamLab/videos", "dist/StreamLab/bin", "dist/StreamLab/config", "dist/StreamLab/frontend/out"
+          Copy-Item -Path "videos/*" -Destination "dist/StreamLab/videos" -Recurse -Force
+          Copy-Item -Path "bin/*" -Destination "dist/StreamLab/bin" -Recurse -Force
+          Copy-Item -Path "config/*" -Destination "dist/StreamLab/config" -Recurse -Force
+          Copy-Item -Path "frontend/out/*" -Destination "dist/StreamLab/frontend/out" -Recurse -Force
 
       - name: Compile Inno Setup Installer (.EXE)
+        shell: pwsh
         run: |
           $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
           if (-not (Test-Path $iscc)) {
             $iscc = "C:\Program Files\Inno Setup 6\ISCC.exe"
           }
+          if (-not (Test-Path $iscc)) {
+            $cmd = Get-Command iscc.exe -ErrorAction SilentlyContinue
+            if ($cmd) { $iscc = $cmd.Source }
+          }
+          Write-Host "Compiling installer with: $iscc"
           & $iscc installer\StreamLab.iss
 
       - name: Extract Tag & Release Notes
