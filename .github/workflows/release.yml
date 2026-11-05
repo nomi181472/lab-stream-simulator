@@ -57,15 +57,16 @@ jobs:
           pip install pyinstaller pystray pillow
 
       - name: Build Next.js Static Frontend
+        working-directory: frontend
+        shell: bash
         env:
           NEXT_EXPORT: "true"
         run: |
-          cd frontend
           npm ci
           npm run build
-          cd ..
 
       - name: Compile Backend & Bundle Assets with PyInstaller
+        shell: bash
         run: |
           pyinstaller --noconfirm StreamLab.spec
 
