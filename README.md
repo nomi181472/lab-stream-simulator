@@ -126,9 +126,21 @@ StreamLab supports multiple startup methods ranging from **one-click zero-instal
 
 | Method | Best For | Prerequisites | Windows Startup | Linux / macOS Startup |
 | :--- | :--- | :--- | :--- | :--- |
-| **Method 1: Docker (Recommended)** | Zero-install, instant complete stack | [Docker Desktop](https://www.docker.com/) | Double-click `docker-start.bat` | Run `./docker-start.sh` |
+| **Method 0: Windows .EXE Installer** | Zero-install, desktop tray & browser UI | None (Windows 10/11) | Run `StreamLab-Setup-*.exe` | N/A |
+| **Method 1: Docker (Recommended)** | Zero-install containerized stack | [Docker Desktop](https://www.docker.com/) | Double-click `docker-start.bat` | Run `./docker-start.sh` |
 | **Method 2: One-Click Native** | Maximum local performance | Python 3.12+, Node.js 20+, FFmpeg | Double-click `start.bat` | Run `./start.sh` |
 | **Method 3: Manual CLI** | Active codebase development | Python 3.12+, Node.js 20+, FFmpeg | Terminal commands | Terminal commands |
+
+---
+
+### Method 0: Windows One-Click .EXE Installer (No Python or Node.js Required)
+
+Pre-built standalone Windows installer bundled with the complete FastAPI backend, embedded Next.js Mission Control, MediaMTX, FFmpeg, and System Tray controller.
+
+- Download the latest installer from [GitHub Releases](https://github.com/nomi181472/lab-stream-simulator/releases).
+- Run `StreamLab-Setup-1.0.0.exe` and complete the setup wizard.
+- StreamLab will run in the Windows System Tray and launch Mission Control in your default browser.
+- To build the installer locally, run [`build-installer.bat`](build-installer.bat).
 
 ---
 

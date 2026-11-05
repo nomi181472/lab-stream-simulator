@@ -124,7 +124,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="StreamLab",
     description="Multi-Protocol IP Camera Simulator & Interoperability Lab",
-    version="1.0.0",
+    version="1.0.1",
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",
@@ -159,6 +159,12 @@ app.include_router(websocket_router)
 
 # Mount Observability & Health
 app.include_router(observability_router)
+
+# Mount static frontend build (Mission Control UI) if present
+frontend_dist = settings.PROJECT_ROOT / "frontend" / "out"
+if frontend_dist.is_dir():
+    from fastapi.staticfiles import StaticFiles
+    app.mount("/", StaticFiles(directory=str(frontend_dist), html=True), name="frontend")
 
 
 if __name__ == "__main__":

@@ -1,8 +1,15 @@
 /** @type {import('next').NextConfig} */
+const isExport = process.env.NEXT_EXPORT === "true";
+
 const nextConfig = {
-  output: "standalone",
+  output: isExport ? "export" : "standalone",
+  trailingSlash: isExport ? true : false,
+  images: { unoptimized: true },
   reactStrictMode: true,
   async rewrites() {
+    if (isExport) {
+      return [];
+    }
     let backendHost = process.env.NEXT_PUBLIC_BACKEND_HOST;
     if (!backendHost) {
       if (process.platform === "win32") {

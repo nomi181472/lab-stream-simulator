@@ -46,10 +46,20 @@ if [ -d "$HOME/.nvm" ] && [ -s "$HOME/.nvm/nvm.sh" ]; then
     \. "$NVM_DIR/nvm.sh" 2>/dev/null || true
 fi
 
-if [ "$IS_WINDOWS" = true ] && [ -d "$APPDATA/nvm" ]; then
+if [ "$IS_WINDOWS" = true ] && [ -n "$APPDATA" ] && [ -d "$APPDATA/nvm" ]; then
     export NVM_HOME="$APPDATA/nvm"
     export NVM_SYMLINK="$APPDATA/nvm/nodejs"
     export PATH="$NVM_HOME:$NVM_SYMLINK:$PATH"
+fi
+
+# Fallback check for standard Windows Node.js locations
+if ! command -v node &> /dev/null; then
+    for node_dir in "/c/Program Files/nodejs" "/c/Program Files (x86)/nodejs" "$LOCALAPPDATA/Programs/node"; do
+        if [ -d "$node_dir" ]; then
+            export PATH="$node_dir:$PATH"
+            break
+        fi
+    done
 fi
 
 # Verify Node & npm
@@ -62,12 +72,20 @@ fi
 PYTHON_CMD=""
 if [ -f "backend/.venv/Scripts/python.exe" ]; then
     PYTHON_CMD="backend/.venv/Scripts/python.exe"
+elif [ -f "backend/.venv/Scripts/python" ]; then
+    PYTHON_CMD="backend/.venv/Scripts/python"
 elif [ -f "backend/.venv/bin/python" ]; then
     PYTHON_CMD="backend/.venv/bin/python"
-elif command -v python3 &> /dev/null; then
-    PYTHON_CMD="python3"
-elif command -v python &> /dev/null; then
+elif [ -f ".venv/Scripts/python.exe" ]; then
+    PYTHON_CMD=".venv/Scripts/python.exe"
+elif [ -f ".venv/bin/python" ]; then
+    PYTHON_CMD=".venv/bin/python"
+elif command -v python &> /dev/null && python -c "import sys" &> /dev/null; then
     PYTHON_CMD="python"
+elif command -v python3 &> /dev/null && python3 -c "import sys" &> /dev/null; then
+    PYTHON_CMD="python3"
+elif command -v py &> /dev/null && py -3 -c "import sys" &> /dev/null; then
+    PYTHON_CMD="py -3"
 else
     echo -e "${RED}Error: Python 3.12+ not found. Please install Python or set up backend/.venv.${RESET}"
     exit 1
@@ -81,11 +99,16 @@ echo ""
 
 # 4. Graceful Cleanup Handler
 cleanup() {
+    trap - SIGINT SIGTERM EXIT
     echo ""
     echo -e "${YELLOW}>> Gracefully shutting down StreamLab services...${RESET}"
-    # Kill all child jobs started by this script
+    [ -n "$BACKEND_PID" ] && kill "$BACKEND_PID" 2>/dev/null || true
+    [ -n "$FRONTEND_PID" ] && kill "$FRONTEND_PID" 2>/dev/null || true
     kill $(jobs -p) 2>/dev/null || true
-    # On Windows/WSL, also ensure any orphaned uvicorn process is stopped
+    if command -v taskkill &>/dev/null; then
+        [ -n "$BACKEND_PID" ] && taskkill //F //T //PID "$BACKEND_PID" 2>/dev/null || true
+        [ -n "$FRONTEND_PID" ] && taskkill //F //T //PID "$FRONTEND_PID" 2>/dev/null || true
+    fi
     wait 2>/dev/null || true
     echo -e "${GREEN}✓ All services stopped.${RESET}"
     exit 0
@@ -104,8 +127,7 @@ sleep 2
 echo -e "${CYAN}>> [2/2] Starting Next.js Web Frontend on :3000...${RESET}"
 (
     cd frontend
-    # If production build exists and npm run start works, use start or dev
-    if [ -d ".next" ]; then
+    if [ -f ".next/BUILD_ID" ]; then
         npm run start -- -p 3000
     else
         npm run dev
@@ -129,4 +151,4 @@ echo -e "${GREEN}${BOLD}========================================================
 echo -e "${YELLOW}Press [Ctrl + C] anytime to stop all StreamLab services.${RESET}\n"
 
 # Keep script running and waiting for background processes
-wait
+wait "$BACKEND_PID" "$FRONTEND_PID" 2>/dev/null || wait

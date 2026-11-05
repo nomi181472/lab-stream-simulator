@@ -103,3 +103,6 @@ clients/dotnet/bin/
 clients/dotnet/obj/
 bin/Debug/
 obj/Debug/
+
+# Inno Setup output directory
+dist-installer/

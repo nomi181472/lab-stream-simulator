@@ -30,4 +30,6 @@ if command -v xdg-open &> /dev/null; then
     xdg-open http://localhost:3000 2>/dev/null || true
 elif command -v open &> /dev/null; then
     open http://localhost:3000 2>/dev/null || true
+elif command -v cmd.exe &> /dev/null; then
+    cmd.exe /c start http://localhost:3000 2>/dev/null || true
 fi

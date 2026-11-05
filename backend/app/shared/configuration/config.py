@@ -3,18 +3,49 @@ StreamLab Global Configuration.
 Loads settings from environment variables and provides centralized configuration.
 """
 
+import os
+import sys
 from pathlib import Path
 from typing import List, Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+def _resolve_project_root() -> Path:
+    if getattr(sys, "frozen", False):
+        exe_dir = Path(sys.executable).resolve().parent
+        if (exe_dir / "videos").exists() or (exe_dir / "bin").exists():
+            return exe_dir
+        if hasattr(sys, "_MEIPASS"):
+            return Path(sys._MEIPASS)
+        return exe_dir
+    return Path(__file__).resolve().parent.parent.parent.parent.parent
+
+
+def _resolve_database_url(project_root: Path) -> str:
+    if getattr(sys, "frozen", False):
+        local_app_data = os.environ.get("LOCALAPPDATA")
+        if local_app_data:
+            data_dir = Path(local_app_data) / "StreamLab"
+        else:
+            data_dir = project_root / "data"
+        data_dir.mkdir(parents=True, exist_ok=True)
+        db_file = data_dir / "streamlab.db"
+        return f"sqlite+aiosqlite:///{db_file.as_posix()}"
+    
+    (project_root / "backend").mkdir(parents=True, exist_ok=True)
+    return f"sqlite+aiosqlite:///{project_root.as_posix()}/backend/streamlab.db"
+
+
+_root = _resolve_project_root()
+
+
 class Settings(BaseSettings):
     # Base paths
-    PROJECT_ROOT: Path = Path(__file__).resolve().parent.parent.parent.parent.parent
-    VIDEOS_DIR: Path = PROJECT_ROOT / "videos"
-    CONFIG_DIR: Path = PROJECT_ROOT / "config"
-    BIN_DIR: Path = PROJECT_ROOT / "bin"
-    DATABASE_URL: str = f"sqlite+aiosqlite:///{PROJECT_ROOT}/backend/streamlab.db"
+    PROJECT_ROOT: Path = _root
+    VIDEOS_DIR: Path = _root / "videos"
+    CONFIG_DIR: Path = _root / "config"
+    BIN_DIR: Path = _root / "bin"
+    DATABASE_URL: str = _resolve_database_url(_root)
 
     # Server settings
     HOST: str = "0.0.0.0"
