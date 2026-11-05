@@ -64,25 +64,13 @@ jobs:
           NEXT_EXPORT: "true"
           NEXT_TELEMETRY_DISABLED: "1"
         run: |
-          call npm install --no-audit
-          call npm run build
-          dir out
+          npm install --no-audit
+          npm run build
 
       - name: Compile Backend & Bundle Assets with PyInstaller
-        shell: pwsh
+        shell: cmd
         run: |
-          $ErrorActionPreference = 'Continue'
-          Write-Host "Running PyInstaller..."
-          $log = python -m PyInstaller --noconfirm StreamLab.spec 2>&1
-          $log | Out-Host
-          $log | Out-File "pyinstaller_run.log" -Encoding utf8
-          if ($LASTEXITCODE -ne 0) {
-            "### PyInstaller Build Error (Exit Code $LASTEXITCODE)" >> $env:GITHUB_STEP_SUMMARY
-            "```" >> $env:GITHUB_STEP_SUMMARY
-            $log | Select-Object -Last 40 >> $env:GITHUB_STEP_SUMMARY
-            "```" >> $env:GITHUB_STEP_SUMMARY
-            exit $LASTEXITCODE
-          }
+          python -m PyInstaller --noconfirm StreamLab.spec
 
       - name: Copy Auxiliary Directories into dist
         shell: pwsh
