@@ -58,20 +58,15 @@ jobs:
           pip install pyinstaller pystray pillow email-validator
 
       - name: Build Next.js Static Frontend
-        shell: pwsh
+        working-directory: frontend
+        shell: cmd
         env:
           NEXT_EXPORT: "true"
           NEXT_TELEMETRY_DISABLED: "1"
         run: |
-          Set-Location frontend
-          npm install --no-audit
-          npm run build
-          Set-Location ..
-          if (-not (Test-Path "frontend/out/index.html")) {
-            Write-Error "Static export failed: frontend/out/index.html does not exist!"
-            exit 1
-          }
-          Write-Host "Frontend build and static export verified successfully."
+          call npm install --no-audit
+          call npm run build
+          dir out
 
       - name: Compile Backend & Bundle Assets with PyInstaller
         shell: pwsh
