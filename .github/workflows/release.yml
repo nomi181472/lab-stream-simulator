@@ -64,9 +64,8 @@ jobs:
           NEXT_EXPORT: "true"
           NEXT_TELEMETRY_DISABLED: "1"
         run: |
-          npm install --no-audit
-          set NEXT_EXPORT=true
-          npm run build
+          call npm install --no-audit
+          call npm run build
 
       - name: Verify Frontend Static Export
         shell: pwsh
