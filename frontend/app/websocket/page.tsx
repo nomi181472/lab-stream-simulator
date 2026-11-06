@@ -1,6 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { fetchCameras } from '@/lib/api';
+import { Video, Copy, Check } from 'lucide-react';
 import { useWebSocket } from '@/hooks/useWebSocket';
 
 export default function WebSocketPage() {
@@ -8,6 +11,18 @@ export default function WebSocketPage() {
   const [filterType, setFilterType] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedEventIndex, setSelectedEventIndex] = useState<number | null>(null);
+  const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
+
+  const { data: cameras = [] } = useQuery({
+    queryKey: ['cameras'],
+    queryFn: fetchCameras,
+  });
+
+  const handleCopy = (url: string) => {
+    navigator.clipboard.writeText(url);
+    setCopiedUrl(url);
+    setTimeout(() => setCopiedUrl(null), 2000);
+  };
 
   const filteredEvents = events.filter((e) => {
     if (filterType !== 'ALL') {
@@ -61,6 +76,62 @@ export default function WebSocketPage() {
             Send Heartbeat Ping
           </button>
         </div>
+      </div>
+
+      {/* Per-Camera Direct WebSocket Video Stream Endpoints */}
+      <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h2 className="text-base font-bold text-white flex items-center gap-2">
+              <Video className="w-4 h-4 text-emerald-400" />
+              Direct Live Video Stream (Binary JPEG / MJPEG Frames)
+            </h2>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Dedicated binary WebSocket video stream pushing raw JPEG frames for real-time web playback in &lt;canvas&gt; or &lt;img&gt;.
+            </p>
+          </div>
+          <span className="text-xs font-mono text-cyan-400 bg-slate-950 px-2.5 py-1 rounded border border-slate-800 self-start sm:self-auto">
+            ws://localhost:8000/ws/cameras/{'{camera_id}'}/stream
+          </span>
+        </div>
+
+        {cameras.length === 0 ? (
+          <div className="text-xs text-slate-500 italic py-2">
+            No cameras provisioned yet. Head to Camera Manager to create a camera.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {cameras.map((cam) => {
+              const wsUrl = cam.ws_stream_url || (typeof window !== "undefined" ? `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.hostname}:8000/ws/cameras/${cam.id}/stream` : `ws://localhost:8000/ws/cameras/${cam.id}/stream`);
+              return (
+                <div key={cam.id} className="bg-slate-950/80 border border-slate-800/80 rounded-lg p-3.5 flex flex-col gap-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-xs text-white truncate max-w-[200px]">{cam.name}</span>
+                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase ${
+                      cam.status === "running" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-slate-800 text-slate-400"
+                    }`}>
+                      {cam.status}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between bg-slate-900/90 px-2.5 py-1.5 rounded border border-slate-800 text-xs font-mono">
+                    <span className="text-emerald-400 truncate max-w-[280px]">{wsUrl}</span>
+                    <button
+                      onClick={() => handleCopy(wsUrl)}
+                      className="text-slate-300 hover:text-white ml-2 shrink-0 flex items-center gap-1 text-[11px] bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded transition-colors"
+                    >
+                      {copiedUrl === wsUrl ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>{copiedUrl === wsUrl ? "Copied" : "Copy"}</span>
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] text-slate-400">
+                    <span>ID: <code className="text-slate-300">{cam.id}</code></span>
+                    <span>{cam.resolution_width}x{cam.resolution_height} • {cam.fps} FPS</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Connection & Counter Banner */}

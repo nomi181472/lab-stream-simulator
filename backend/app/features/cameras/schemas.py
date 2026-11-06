@@ -89,6 +89,7 @@ class CameraResponse(CameraBase):
     snapshot_url: str
     hls_url: str
     webrtc_url: str
+    ws_stream_url: Optional[str] = None
     stats: Optional[StreamStats] = None
 
     model_config = ConfigDict(from_attributes=True)

@@ -51,6 +51,7 @@ export interface Camera {
   snapshot_url: string;
   hls_url: string;
   webrtc_url: string;
+  ws_stream_url?: string;
   profile_token?: string;
   rtsp_port?: number;
   is_enabled?: boolean;

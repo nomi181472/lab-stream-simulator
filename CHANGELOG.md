@@ -2,6 +2,9 @@
 
 All notable changes to the StreamLab project are documented in this file.
 
+## [1.0.3] - 2026-11-06
+- feat(ui): display direct websocket video stream urls on camera cards and websocket console
+
 ## [1.0.2] - 2026-11-06
 - Fix static frontend mounting in installer and add readiness polling for auto browser launch
 

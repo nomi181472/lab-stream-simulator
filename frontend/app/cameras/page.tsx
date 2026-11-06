@@ -126,6 +126,22 @@ export default function CameraManagerPage() {
                     </button>
                   </div>
                   <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">WebSocket:</span>
+                    {(() => {
+                      const wsUrl = cam.ws_stream_url || (typeof window !== "undefined" ? `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.hostname}:8000/ws/cameras/${cam.id}/stream` : `ws://localhost:8000/ws/cameras/${cam.id}/stream`);
+                      return (
+                        <button
+                          onClick={() => handleCopy(wsUrl)}
+                          className="text-emerald-400 hover:underline flex items-center gap-1 max-w-[200px] truncate"
+                          title="Copy WebSocket Video Stream URL (Binary JPEG frames)"
+                        >
+                          {copiedUrl === wsUrl ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                          <span className="truncate">{wsUrl}</span>
+                        </button>
+                      );
+                    })()}
+                  </div>
+                  <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Snapshot:</span>
                     <a
                       href={cam.snapshot_url}

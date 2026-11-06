@@ -55,8 +55,30 @@ async def websocket_camera_video_stream(websocket: WebSocket, camera_id: str):
     from backend.app.shared.configuration.config import settings
     from backend.app.shared.subprocesses.manager import process_manager
 
+    from backend.app.shared.database.database import async_session_maker
+    from backend.app.features.cameras.models import CameraModel
+    from sqlalchemy import select
+
     ffmpeg = process_manager.find_binary("ffmpeg")
-    rtsp_target = f"rtsp://127.0.0.1:{settings.RTSP_PORT}/cameras/{camera_id}/main"
+    if not ffmpeg:
+        logger.error("FFmpeg binary not found for WebSocket video stream.")
+        await websocket.close(code=1011, reason="FFmpeg not available")
+        return
+
+    auth_prefix = ""
+    rtsp_path = f"cameras/{camera_id}/main"
+    try:
+        async with async_session_maker() as session:
+            cam_res = await session.execute(select(CameraModel).where(CameraModel.id == camera_id))
+            cam = cam_res.scalar_one_or_none()
+            if cam:
+                rtsp_path = cam.rtsp_path
+                if cam.auth_enabled and cam.username and cam.password:
+                    auth_prefix = f"{cam.username}:{cam.password}@"
+    except Exception as e:
+        logger.debug(f"Could not load camera details for ws stream: {e}")
+
+    rtsp_target = f"rtsp://{auth_prefix}127.0.0.1:{settings.RTSP_PORT}/{rtsp_path}"
 
     cmd = [
         ffmpeg,

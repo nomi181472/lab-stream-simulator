@@ -39,6 +39,7 @@ class CameraService:
         snapshot_url = f"http://{host}:{settings.API_PORT}/{cam.snapshot_path}"
         hls_url = f"http://{host}:{settings.HLS_PORT}/{cam.rtsp_path}/index.m3u8"
         webrtc_url = f"http://{host}:{settings.WEBRTC_PORT}/{cam.rtsp_path}/whep"
+        ws_stream_url = f"ws://{host}:{settings.API_PORT}/ws/cameras/{cam.id}/stream"
 
         return {
             "rtsp_url": rtsp_url,
@@ -46,6 +47,7 @@ class CameraService:
             "snapshot_url": snapshot_url,
             "hls_url": hls_url,
             "webrtc_url": webrtc_url,
+            "ws_stream_url": ws_stream_url,
         }
 
     async def get_stream_stats(self, cam_id: str) -> StreamStats:
@@ -111,6 +113,7 @@ class CameraService:
             snapshot_url=urls["snapshot_url"],
             hls_url=urls["hls_url"],
             webrtc_url=urls["webrtc_url"],
+            ws_stream_url=urls["ws_stream_url"],
             stats=stats,
         )
 

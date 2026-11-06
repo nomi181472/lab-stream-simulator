@@ -124,7 +124,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="StreamLab",
     description="Multi-Protocol IP Camera Simulator & Interoperability Lab",
-    version="1.0.2",
+    version="1.0.3",
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",
