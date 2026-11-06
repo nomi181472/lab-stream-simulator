@@ -2,6 +2,9 @@
 
 All notable changes to the StreamLab project are documented in this file.
 
+## [1.0.2] - 2026-11-06
+- Fix static frontend mounting in installer and add readiness polling for auto browser launch
+
 ## [1.0.1] - 2026-11-05
 - Fixed camera streaming loop and updated UI
 

@@ -142,15 +142,15 @@ def main():
     # 3. Update files
     print("[1/4] Updating project version numbers...")
     update_version_files(new_version)
-    print("  ✓ Updated VERSION")
-    print("  ✓ Updated frontend/package.json")
-    print("  ✓ Updated backend/app/main.py")
-    print("  ✓ Updated installer/StreamLab.iss")
+    print("  [OK] Updated VERSION")
+    print("  [OK] Updated frontend/package.json")
+    print("  [OK] Updated backend/app/main.py")
+    print("  [OK] Updated installer/StreamLab.iss")
 
     # 4. Update Changelog
     print("[2/4] Updating CHANGELOG.md...")
     update_changelog(new_version, description)
-    print("  ✓ Added release notes to CHANGELOG.md")
+    print("  [OK] Added release notes to CHANGELOG.md")
 
     # 5. Git commit & tag
     print("[3/4] Staging and creating git commit and release tag...")
@@ -159,8 +159,8 @@ def main():
     run_git(["commit", "-m", commit_msg])
     tag_name = f"v{new_version}"
     run_git(["tag", "-a", tag_name, "-m", description])
-    print(f"  ✓ Created git commit: {commit_msg}")
-    print(f"  ✓ Created git tag: {tag_name}")
+    print(f"  [OK] Created git commit: {commit_msg}")
+    print(f"  [OK] Created git tag: {tag_name}")
 
     # 6. Push to GitHub
     if args.no_push:
@@ -170,7 +170,7 @@ def main():
         print(f"[4/4] Pushing {current_branch} and tag {tag_name} to GitHub...")
         run_git(["push", "origin", current_branch])
         run_git(["push", "origin", tag_name])
-        print("  ✓ Pushed commit and tag to GitHub origin!")
+        print("  [OK] Pushed commit and tag to GitHub origin!")
 
     # 7. Print summary & URL
     remote_url = run_git(["remote", "get-url", "origin"], check=False)
@@ -182,7 +182,7 @@ def main():
 
     print()
     print("=========================================================================")
-    print(f"🎉 StreamLab {tag_name} successfully published to GitHub!")
+    print(f"[SUCCESS] StreamLab {tag_name} successfully published to GitHub!")
     print("=========================================================================")
     if repo_url:
         print(f"Repository Releases:  {repo_url}/releases")
