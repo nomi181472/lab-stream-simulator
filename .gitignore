@@ -55,7 +55,9 @@ logs/
 /tmp/
 
 # HLS segments & temporary streaming dumps
-*.ts
+# *.ts (commented out to allow TypeScript source files)
+!*.ts
+!*.tsx
 *.m4s
 *.m3u8
 *.mpd
@@ -106,3 +108,6 @@ obj/Debug/
 
 # Inno Setup output directory
 dist-installer/
+landing/node_modules/
+landing/.next/
+landing/out/

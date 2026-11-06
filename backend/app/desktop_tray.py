@@ -96,9 +96,18 @@ class StreamLabTrayApp:
         self.server_thread = threading.Thread(target=self.start_uvicorn, daemon=True)
         self.server_thread.start()
 
-        # 2. Brief wait to ensure server is ready, then open browser
+        # 2. Actively wait for backend to be healthy, then pop open browser
         def launch_browser():
-            time.sleep(2.0)
+            import urllib.request
+            # Poll /healthz until server is fully initialized (up to 30 seconds)
+            for _ in range(60):
+                time.sleep(0.5)
+                try:
+                    with urllib.request.urlopen(f"http://127.0.0.1:{settings.API_PORT}/healthz", timeout=1) as resp:
+                        if resp.status == 200:
+                            break
+                except Exception:
+                    pass
             self.open_browser()
 
         threading.Thread(target=launch_browser, daemon=True).start()

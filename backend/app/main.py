@@ -161,10 +161,26 @@ app.include_router(websocket_router)
 app.include_router(observability_router)
 
 # Mount static frontend build (Mission Control UI) if present
-frontend_dist = settings.PROJECT_ROOT / "frontend" / "out"
-if frontend_dist.is_dir():
+def _resolve_frontend_dist():
+    from pathlib import Path
+    candidates = [
+        settings.PROJECT_ROOT / "frontend" / "out",
+        settings.PROJECT_ROOT / "_internal" / "frontend" / "out",
+    ]
+    if hasattr(sys, "_MEIPASS"):
+        candidates.append(Path(sys._MEIPASS) / "frontend" / "out")
+    for p in candidates:
+        if p.is_dir() and (p / "index.html").exists():
+            return p
+    return None
+
+frontend_dist = _resolve_frontend_dist()
+if frontend_dist:
+    logger.info(f"Mounting Mission Control static frontend from: {frontend_dist}")
     from fastapi.staticfiles import StaticFiles
     app.mount("/", StaticFiles(directory=str(frontend_dist), html=True), name="frontend")
+else:
+    logger.warning("No static frontend found at frontend/out or _internal/frontend/out")
 
 
 if __name__ == "__main__":

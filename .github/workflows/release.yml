@@ -65,7 +65,17 @@ jobs:
           NEXT_TELEMETRY_DISABLED: "1"
         run: |
           npm install --no-audit
+          set NEXT_EXPORT=true
           npm run build
+
+      - name: Verify Frontend Static Export
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "frontend/out/index.html")) {
+            Write-Error "CRITICAL: frontend/out/index.html does not exist! Next.js static export failed."
+            exit 1
+          }
+          Write-Host "Verified: frontend/out/index.html exists ($((Get-Item frontend/out/index.html).Length) bytes)."
 
       - name: Compile Backend & Bundle Assets with PyInstaller
         shell: cmd
@@ -79,7 +89,20 @@ jobs:
           if (Test-Path "videos") { Copy-Item -Path "videos/*" -Destination "dist/StreamLab/videos" -Recurse -Force }
           if (Test-Path "bin") { Copy-Item -Path "bin/*" -Destination "dist/StreamLab/bin" -Recurse -Force }
           if (Test-Path "config") { Copy-Item -Path "config/*" -Destination "dist/StreamLab/config" -Recurse -Force }
-          if (Test-Path "frontend/out") { Copy-Item -Path "frontend/out/*" -Destination "dist/StreamLab/frontend/out" -Recurse -Force }
+          Copy-Item -Path "frontend/out/*" -Destination "dist/StreamLab/frontend/out" -Recurse -Force
+          if (-not (Test-Path "dist/StreamLab/frontend/out/index.html")) {
+            Write-Error "CRITICAL: dist/StreamLab/frontend/out/index.html is missing before Inno Setup compilation!"
+            exit 1
+          }
+          Write-Host "dist/StreamLab/frontend/out populated with $((Get-ChildItem -Recurse dist/StreamLab/frontend/out).Count) files."
+
+      - name: Create Portable Zip Package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "dist-installer"
+          $zipName = "dist-installer/StreamLab-Portable-Windows.zip"
+          Compress-Archive -Path "dist/StreamLab/*" -DestinationPath $zipName -Force
+          Write-Host "Created portable archive: $zipName ($((Get-Item $zipName).Length) bytes)"
 
       - name: Compile Inno Setup Installer (.EXE)
         shell: pwsh
@@ -123,7 +146,9 @@ jobs:
           name: StreamLab ${{ steps.release_info.outputs.tag_name }}
           body: ${{ steps.release_info.outputs.tag_message }}
           tag_name: ${{ steps.release_info.outputs.tag_name }}
-          files: dist-installer/StreamLab-Setup-*.exe
+          files: |
+            dist-installer/StreamLab-Setup-*.exe
+            dist-installer/StreamLab-Portable-*.zip
           generate_release_notes: true
 
       - name: Upload Logs on Failure

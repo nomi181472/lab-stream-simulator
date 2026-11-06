@@ -1,7 +1,7 @@
 PYTHON ?= backend/.venv/Scripts/python.exe
 WSL ?= wsl
 
-.PHONY: help install dev-backend dev-frontend test-backend test-python test-node test-golang test-dart test-dotnet test-kotlin test-all docker-up docker-down
+.PHONY: help install dev-backend dev-frontend dev-landing build-landing test-backend test-python test-node test-golang test-dart test-dotnet test-kotlin test-all docker-up docker-down
 
 help:
 	@echo "=========================================================================="
@@ -10,6 +10,8 @@ help:
 	@echo "Available Targets:"
 	@echo "  make dev-backend   - Start FastAPI server, MediaMTX engine, & WS-Discovery"
 	@echo "  make dev-frontend  - Start Next.js App Router UI on http://localhost:3000"
+	@echo "  make dev-landing   - Start Next.js SEO Landing Page on http://localhost:3001"
+	@echo "  make build-landing - Export static SEO landing site to landing/out"
 	@echo "  make test-backend  - Run backend unit and live media pipeline tests"
 	@echo "  make test-python   - Run Python client test suite"
 	@echo "  make test-node     - Run Node.js client test suite"
@@ -27,6 +29,12 @@ dev-backend:
 
 dev-frontend:
 	$(WSL) bash -c "cd /mnt/c/projects/lab-stream-simulator/frontend && npm run dev"
+
+dev-landing:
+	cd landing && npm run dev
+
+build-landing:
+	cd landing && npm run build
 
 test-backend:
 	$(PYTHON) -m pytest backend/tests -v

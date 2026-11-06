@@ -216,6 +216,14 @@ npm install
 npm run dev
 ```
 
+#### 3. Start or Build the SEO Static Landing Page (Next.js)
+```bash
+cd landing
+npm install
+npm run dev     # Live preview on http://localhost:3001
+npm run build   # Exports static HTML/CSS/assets to landing/out (for GitHub Pages / Cloudflare Pages / Vercel)
+```
+
 ---
 
 ### 🌐 Live Service Directory & Endpoints
@@ -224,6 +232,7 @@ Once started, all protocols and management portals are live:
 
 | Service / Protocol | Endpoint URL | Description / Client App |
 | :--- | :--- | :--- |
+| **Landing Page (Static SEO)** | [http://localhost:3001](http://localhost:3001) | Static product landing page (`landing/out`) |
 | **Web UI (Mission Control)** | [http://localhost:3000](http://localhost:3000) | Full browser dashboard & camera controls |
 | **Interactive API Docs** | [http://localhost:8000/docs](http://localhost:8000/docs) | Swagger UI for REST API exploration |
 | **RTSP Live Stream** | `rtsp://localhost:8554/cameras/101/main` | Real-time RTSP stream (VLC, OpenCV, FFplay, NVRs) |
