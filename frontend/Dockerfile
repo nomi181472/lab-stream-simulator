@@ -6,6 +6,7 @@ COPY package*.json ./
 RUN npm install
 
 COPY . .
+ENV DOCKER_BUILD=true
 RUN npm run build
 
 FROM node:22-alpine AS runner

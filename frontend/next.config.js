@@ -1,7 +1,6 @@
 /** @type {import('next').NextConfig} */
-const isExport =
-  (process.env.NEXT_EXPORT || "").trim() === "true" ||
-  process.env.GITHUB_ACTIONS === "true";
+const isDocker = process.env.DOCKER_BUILD === "true";
+const isExport = !isDocker;
 
 const nextConfig = {
   output: isExport ? "export" : "standalone",
