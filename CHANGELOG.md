@@ -2,6 +2,9 @@
 
 All notable changes to the StreamLab project are documented in this file.
 
+## [1.0.5] - 2026-11-06
+- feat: add cross-platform Linux standalone executable, Debian (.deb) package, and dual CI/CD pipeline
+
 ## [1.0.4] - 2026-11-06
 - feat(ui): custom scan directory input and websocket live streaming display
 

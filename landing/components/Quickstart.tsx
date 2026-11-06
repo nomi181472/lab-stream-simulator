@@ -30,14 +30,23 @@ docker compose up -d
   },
   {
     id: "installer",
-    name: "Windows .EXE Installer",
-    tag: "Desktop App",
-    description: "Standalone Windows installer with system tray controller, packaged MediaMTX, and embedded UI.",
-    commands: `# 1. Download StreamLab-Setup-1.0.1.exe from GitHub Releases:
-https://github.com/nomi181472/lab-stream-simulator/releases
+    name: "Windows & Linux Packages",
+    tag: "Desktop / Standalone",
+    description: "Standalone pre-compiled packages for Windows (.exe setup & zip) and Linux (.deb installer & tar.gz) with zero external dependencies.",
+    commands: `# Windows (.EXE Setup or Portable ZIP):
+# 1. Download StreamLab-Setup-*.exe or StreamLab-Portable-Windows.zip
+# 2. Run the installer wizard (or unzip and run StreamLab.exe)
 
-# 2. Run the installer wizard
-# 3. StreamLab appears in your Windows System Tray and opens Mission Control in your browser.`,
+# Linux Debian / Ubuntu (.DEB Direct Install):
+sudo dpkg -i StreamLab-Linux-*-amd64.deb
+streamlab
+
+# Linux Universal Portable (.tar.gz):
+tar -xzf StreamLab-Linux-*-x86_64.tar.gz
+cd StreamLab
+./StreamLab
+
+# Releases: https://github.com/nomi181472/lab-stream-simulator/releases`,
   },
   {
     id: "native",

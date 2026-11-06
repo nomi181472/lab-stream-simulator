@@ -126,21 +126,39 @@ StreamLab supports multiple startup methods ranging from **one-click zero-instal
 
 | Method | Best For | Prerequisites | Windows Startup | Linux / macOS Startup |
 | :--- | :--- | :--- | :--- | :--- |
-| **Method 0: Windows .EXE Installer** | Zero-install, desktop tray & browser UI | None (Windows 10/11) | Run `StreamLab-Setup-*.exe` | N/A |
+| **Method 0: Standalone Installer & Portable (Windows & Linux)** | Zero-install, desktop tray & browser UI | None (Windows 10/11 or Linux x86_64) | Run `StreamLab-Setup-*.exe` | `sudo dpkg -i streamlab.deb` or extract `.tar.gz` |
 | **Method 1: Docker (Recommended)** | Zero-install containerized stack | [Docker Desktop](https://www.docker.com/) | Double-click `docker-start.bat` | Run `./docker-start.sh` |
 | **Method 2: One-Click Native** | Maximum local performance | Python 3.12+, Node.js 20+, FFmpeg | Double-click `start.bat` | Run `./start.sh` |
 | **Method 3: Manual CLI** | Active codebase development | Python 3.12+, Node.js 20+, FFmpeg | Terminal commands | Terminal commands |
 
 ---
 
-### Method 0: Windows One-Click .EXE Installer (No Python or Node.js Required)
+### Method 0: Standalone Installers & Portable Packages (No Python or Node.js Required)
 
-Pre-built standalone Windows installer bundled with the complete FastAPI backend, embedded Next.js Mission Control, MediaMTX, FFmpeg, and System Tray controller.
+Pre-built standalone distributions bundled with the complete FastAPI backend, embedded Next.js Mission Control, MediaMTX engine, and auto-launching controller.
 
-- Download the latest installer from [GitHub Releases](https://github.com/nomi181472/lab-stream-simulator/releases).
-- Run `StreamLab-Setup-1.0.0.exe` and complete the setup wizard.
+#### 🪟 Windows (.EXE Setup & Portable ZIP):
+- Download `StreamLab-Setup-*.exe` or `StreamLab-Portable-Windows.zip` from [GitHub Releases](https://github.com/nomi181472/lab-stream-simulator/releases).
+- Run `StreamLab-Setup-*.exe` and complete the setup wizard (or extract portable ZIP and run `StreamLab.exe`).
 - StreamLab will run in the Windows System Tray and launch Mission Control in your default browser.
-- To build the installer locally, run [`build-installer.bat`](build-installer.bat).
+- Local builder: run [`build-installer.bat`](build-installer.bat).
+
+#### 🐧 Linux (.DEB Installer & Portable Tarball):
+- **Debian / Ubuntu Direct Install (`.deb`)**:
+  ```bash
+  # Download from GitHub Releases and install:
+  sudo dpkg -i StreamLab-Linux-*-amd64.deb
+  # Launch from application launcher or terminal:
+  streamlab
+  ```
+- **Universal Portable Tarball (`.tar.gz`)**:
+  ```bash
+  tar -xzf StreamLab-Linux-*-x86_64.tar.gz
+  cd StreamLab
+  ./StreamLab
+  ```
+- *Runs seamlessly on Linux desktops (with System Tray) and headless Linux servers/VPS (in console mode).*
+- Local builder: run [`build-installer.sh`](build-installer.sh).
 
 ---
 

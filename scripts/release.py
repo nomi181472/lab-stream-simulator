@@ -69,12 +69,19 @@ def update_version_files(new_version: str):
         content = re.sub(r'(version\s*=\s*)"[^"]+"', rf'\g<1>"{new_version}"', content, count=1)
         main_file.write_text(content, encoding="utf-8")
 
-    # 4. installer/StreamLab.iss
+    # 4. installer/StreamLab.iss (Windows Inno Setup)
     iss_file = PROJECT_ROOT / "installer" / "StreamLab.iss"
     if iss_file.is_file():
         content = iss_file.read_text(encoding="utf-8")
         content = re.sub(r'(#define\s+MyAppVersion\s+)"[^"]+"', rf'\g<1>"{new_version}"', content, count=1)
         iss_file.write_text(content, encoding="utf-8")
+
+    # 5. installer/linux/DEBIAN/control (Linux Debian Package)
+    deb_control = PROJECT_ROOT / "installer" / "linux" / "DEBIAN" / "control"
+    if deb_control.is_file():
+        content = deb_control.read_text(encoding="utf-8")
+        content = re.sub(r'(Version\s*:\s*)[^\n]+', rf'\g<1>{new_version}', content, count=1)
+        deb_control.write_text(content, encoding="utf-8")
 
 
 def update_changelog(new_version: str, description: str):
@@ -145,7 +152,8 @@ def main():
     print("  [OK] Updated VERSION")
     print("  [OK] Updated frontend/package.json")
     print("  [OK] Updated backend/app/main.py")
-    print("  [OK] Updated installer/StreamLab.iss")
+    print("  [OK] Updated installer/StreamLab.iss (Windows Setup)")
+    print("  [OK] Updated installer/linux/DEBIAN/control (Linux Debian)")
 
     # 4. Update Changelog
     print("[2/4] Updating CHANGELOG.md...")
@@ -188,8 +196,9 @@ def main():
         print(f"Repository Releases:  {repo_url}/releases")
         print(f"GitHub Actions Run:   {repo_url}/actions")
     print()
-    print("GitHub Actions is now automatically building the Windows .EXE installer")
-    print(f"and attaching StreamLab-Setup-{new_version}.exe to the GitHub Release!")
+    print("GitHub Actions is now automatically building both Windows and Linux packages:")
+    print(f"  - Windows: StreamLab-Setup-{new_version}.exe & StreamLab-Portable-Windows.zip")
+    print(f"  - Linux:   StreamLab-Linux-{new_version}-amd64.deb & StreamLab-Linux-{new_version}-x86_64.tar.gz")
     print("=========================================================================")
 
 

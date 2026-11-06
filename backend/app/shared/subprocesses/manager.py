@@ -105,8 +105,14 @@ class SubprocessManager:
             ])
 
         for c in candidates:
-            if os.path.isfile(c) and (is_windows or os.access(c, os.X_OK)):
-                return str(Path(c).resolve())
+            if os.path.isfile(c):
+                if not is_windows and not os.access(c, os.X_OK):
+                    try:
+                        os.chmod(c, os.stat(c).st_mode | 0o755)
+                    except Exception:
+                        pass
+                if is_windows or os.access(c, os.X_OK):
+                    return str(Path(c).resolve())
             found = shutil.which(c)
             if found:
                 return str(Path(found).resolve())

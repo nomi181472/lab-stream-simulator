@@ -13,7 +13,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 def _resolve_project_root() -> Path:
     if getattr(sys, "frozen", False):
         exe_dir = Path(sys.executable).resolve().parent
-        if (exe_dir / "videos").exists() or (exe_dir / "bin").exists():
+        if (exe_dir / "videos").exists() or (exe_dir / "bin").exists() or (exe_dir / "config").exists():
             return exe_dir
         if hasattr(sys, "_MEIPASS"):
             return Path(sys._MEIPASS)
@@ -23,14 +23,25 @@ def _resolve_project_root() -> Path:
 
 def _resolve_database_url(project_root: Path) -> str:
     if getattr(sys, "frozen", False):
-        local_app_data = os.environ.get("LOCALAPPDATA")
-        if local_app_data:
-            data_dir = Path(local_app_data) / "StreamLab"
+        if sys.platform == "win32":
+            local_app_data = os.environ.get("LOCALAPPDATA")
+            data_dir = (Path(local_app_data) / "StreamLab") if local_app_data else (project_root / "data")
+        elif sys.platform.startswith("linux"):
+            xdg_data = os.environ.get("XDG_DATA_HOME")
+            data_dir = (Path(xdg_data) / "streamlab") if xdg_data else (Path.home() / ".local" / "share" / "streamlab")
+        elif sys.platform == "darwin":
+            data_dir = Path.home() / "Library" / "Application Support" / "StreamLab"
         else:
             data_dir = project_root / "data"
-        data_dir.mkdir(parents=True, exist_ok=True)
-        db_file = data_dir / "streamlab.db"
-        return f"sqlite+aiosqlite:///{db_file.as_posix()}"
+
+        try:
+            data_dir.mkdir(parents=True, exist_ok=True)
+            db_file = data_dir / "streamlab.db"
+            return f"sqlite+aiosqlite:///{db_file.as_posix()}"
+        except Exception:
+            fallback = project_root / "data"
+            fallback.mkdir(parents=True, exist_ok=True)
+            return f"sqlite+aiosqlite:///{fallback.as_posix()}/streamlab.db"
     
     (project_root / "backend").mkdir(parents=True, exist_ok=True)
     return f"sqlite+aiosqlite:///{project_root.as_posix()}/backend/streamlab.db"

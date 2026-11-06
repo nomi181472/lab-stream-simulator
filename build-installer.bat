@@ -1,12 +1,18 @@
 @echo off
 setlocal enabledelayedexpansion
 
+cd /d "%~dp0"
+
+set "VERSION=1.0.0"
+if exist "VERSION" (
+    set /p VERSION=<VERSION
+)
+set "VERSION=%VERSION: =%"
+
 echo =========================================================================
-echo  StreamLab - Windows .EXE Installer Builder
+echo  StreamLab - Windows .EXE Installer & Portable Package Builder (v%VERSION%)
 echo =========================================================================
 echo.
-
-cd /d "%~dp0"
 
 :: 1. Ensure Python Virtual Environment exists
 if not exist "backend\.venv\Scripts\python.exe" (
@@ -17,8 +23,8 @@ if not exist "backend\.venv\Scripts\python.exe" (
 )
 
 :: 2. Ensure PyInstaller and Pystray are installed
-echo [1/4] Checking Python build dependencies...
-.\backend\.venv\Scripts\python.exe -m pip install --quiet pyinstaller pystray pillow
+echo [1/5] Checking Python build dependencies...
+.\backend\.venv\Scripts\python.exe -m pip install --quiet pyinstaller pystray pillow email-validator
 if %ERRORLEVEL% NEQ 0 (
     echo [ERROR] Failed to install PyInstaller / Pystray dependencies.
     pause
@@ -26,8 +32,9 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 :: 3. Build Next.js Static Frontend
-echo [2/4] Building Next.js Static Frontend UI (Mission Control)...
+echo [2/5] Building Next.js Static Frontend UI (Mission Control)...
 set NEXT_EXPORT=true
+set NEXT_TELEMETRY_DISABLED=1
 cd frontend
 call npm run build
 if %ERRORLEVEL% NEQ 0 (
@@ -39,7 +46,7 @@ if %ERRORLEVEL% NEQ 0 (
 cd ..
 
 :: 4. Run PyInstaller to build standalone distribution
-echo [3/4] Compiling StreamLab backend into standalone executable...
+echo [3/5] Compiling StreamLab backend into standalone executable...
 .\backend\.venv\Scripts\pyinstaller.exe --noconfirm StreamLab.spec
 if %ERRORLEVEL% NEQ 0 (
     echo [ERROR] PyInstaller compilation failed.
@@ -65,8 +72,14 @@ if not exist "dist\StreamLab\frontend\out" (
     xcopy /E /I /Y "frontend\out" "dist\StreamLab\frontend\out"
 )
 
-:: 5. Compile Inno Setup Installer
-echo [4/4] Creating Windows Setup .EXE Installer...
+:: 5. Create Portable ZIP
+echo [4/5] Creating Windows Portable ZIP archive...
+if not exist "dist-installer" mkdir "dist-installer"
+powershell -NoProfile -Command "Compress-Archive -Path 'dist\StreamLab\*' -DestinationPath 'dist-installer\StreamLab-Portable-Windows.zip' -Force"
+powershell -NoProfile -Command "Copy-Item -Path 'dist-installer\StreamLab-Portable-Windows.zip' -Destination 'dist-installer\StreamLab-Windows-%VERSION%-x64.zip' -Force"
+
+:: 6. Compile Inno Setup Installer
+echo [5/5] Creating Windows Setup .EXE Installer...
 
 set "ISCC="
 if exist "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" set "ISCC=C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
@@ -85,8 +98,10 @@ if "%ISCC%"=="" (
     echo.
     echo The standalone application was successfully compiled into:
     echo    dist\StreamLab\StreamLab.exe
+    echo And portable zip created at:
+    echo    dist-installer\StreamLab-Portable-Windows.zip
     echo.
-    echo To package it into a single StreamLab-Setup-1.0.0.exe installer:
+    echo To package it into a single StreamLab-Setup-%VERSION%.exe installer:
     echo 1. Install Inno Setup (free) by running:
     echo       winget install JRSoftware.InnoSetup
     echo    Or download from: https://jrsoftware.org/isdl.php
@@ -109,8 +124,9 @@ if %ERRORLEVEL% NEQ 0 (
 
 echo.
 echo =========================================================================
-echo [SUCCESS] Windows Installer created successfully!
-echo Location: dist-installer\StreamLab-Setup-1.0.0.exe
+echo [SUCCESS] Windows Packages created successfully!
+echo Setup Installer: dist-installer\StreamLab-Setup-%VERSION%.exe
+echo Portable Zip:    dist-installer\StreamLab-Portable-Windows.zip
 echo =========================================================================
 echo.
 pause

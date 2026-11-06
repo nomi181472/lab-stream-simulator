@@ -1,4 +1,4 @@
-name: Release & Build Windows Installer
+name: Release & Build Multi-Platform Installers
 
 'on':
   push:
@@ -15,7 +15,11 @@ permissions:
   contents: write
 
 jobs:
-  build-and-release:
+  # =========================================================================
+  # 1. WINDOWS BUILD JOB: .EXE Setup Installer & Portable .ZIP
+  # =========================================================================
+  build-windows:
+    name: Build Windows Packages
     runs-on: windows-latest
     steps:
       - name: Checkout Repository
@@ -90,18 +94,20 @@ jobs:
           if (Test-Path "config") { Copy-Item -Path "config/*" -Destination "dist/StreamLab/config" -Recurse -Force }
           Copy-Item -Path "frontend/out/*" -Destination "dist/StreamLab/frontend/out" -Recurse -Force
           if (-not (Test-Path "dist/StreamLab/frontend/out/index.html")) {
-            Write-Error "CRITICAL: dist/StreamLab/frontend/out/index.html is missing before Inno Setup compilation!"
+            Write-Error "CRITICAL: dist/StreamLab/frontend/out/index.html is missing before packaging!"
             exit 1
           }
-          Write-Host "dist/StreamLab/frontend/out populated with $((Get-ChildItem -Recurse dist/StreamLab/frontend/out).Count) files."
 
-      - name: Create Portable Zip Package
+      - name: Create Windows Portable Zip Packages
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path "dist-installer"
-          $zipName = "dist-installer/StreamLab-Portable-Windows.zip"
-          Compress-Archive -Path "dist/StreamLab/*" -DestinationPath $zipName -Force
-          Write-Host "Created portable archive: $zipName ($((Get-Item $zipName).Length) bytes)"
+          $ver = (Get-Content -Path "VERSION" -Raw).Trim()
+          $zipDefault = "dist-installer/StreamLab-Portable-Windows.zip"
+          $zipVersioned = "dist-installer/StreamLab-Windows-$ver-x64.zip"
+          Compress-Archive -Path "dist/StreamLab/*" -DestinationPath $zipDefault -Force
+          Copy-Item -Path $zipDefault -Destination $zipVersioned -Force
+          Write-Host "Created portable Windows archive: $zipDefault"
 
       - name: Compile Inno Setup Installer (.EXE)
         shell: pwsh
@@ -117,44 +123,179 @@ jobs:
           Write-Host "Compiling installer with: $iscc"
           & $iscc installer\StreamLab.iss
 
+      - name: Upload Windows Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-artifacts
+          path: dist-installer/*
+
+  # =========================================================================
+  # 2. LINUX BUILD JOB: .DEB Package & Portable .TAR.GZ / .ZIP
+  # =========================================================================
+  build-linux:
+    name: Build Linux Packages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Linux Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dpkg-dev ffmpeg libappindicator3-1 libayatana-appindicator3-1 zip
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -r backend/requirements.txt
+          pip install pyinstaller pystray pillow email-validator
+
+      - name: Download Linux MediaMTX Binary
+        run: |
+          mkdir -p bin
+          curl -sSL -o mediamtx.tar.gz "https://github.com/bluenviron/mediamtx/releases/download/v1.21.0/mediamtx_v1.21.0_linux_amd64.tar.gz"
+          tar -xzf mediamtx.tar.gz -C bin mediamtx
+          chmod +x bin/mediamtx
+          rm -f mediamtx.tar.gz
+          echo "Verified MediaMTX Linux binary:"
+          file bin/mediamtx
+
+      - name: Build Next.js Static Frontend
+        working-directory: frontend
+        env:
+          NEXT_EXPORT: "true"
+          NEXT_TELEMETRY_DISABLED: "1"
+        run: |
+          npm install --no-audit
+          npm run build
+
+      - name: Verify Frontend Static Export
+        run: |
+          if [ ! -f "frontend/out/index.html" ]; then
+            echo "CRITICAL: frontend/out/index.html does not exist!"
+            exit 1
+          fi
+
+      - name: Compile Backend & Bundle Assets with PyInstaller (Linux)
+        run: |
+          python -m PyInstaller --noconfirm StreamLab.spec
+
+      - name: Assemble Linux Auxiliary Files & Permissions
+        run: |
+          mkdir -p dist/StreamLab/videos dist/StreamLab/bin dist/StreamLab/config dist/StreamLab/frontend/out
+          if [ -d "videos" ]; then cp -r videos/* dist/StreamLab/videos/; fi
+          if [ -d "config" ]; then cp -r config/* dist/StreamLab/config/; fi
+          cp -r frontend/out/* dist/StreamLab/frontend/out/
+          cp bin/mediamtx dist/StreamLab/bin/
+          if [ -f "bin/mediamtx.yml" ]; then cp bin/mediamtx.yml dist/StreamLab/bin/; fi
+          cp installer/linux/streamlab.sh dist/StreamLab/streamlab.sh
+          chmod +x dist/StreamLab/streamlab.sh
+          chmod +x dist/StreamLab/StreamLab
+          chmod +x dist/StreamLab/bin/mediamtx
+          if [ -f "installer/linux/streamlab.png" ]; then cp installer/linux/streamlab.png dist/StreamLab/streamlab.png; fi
+
+      - name: Package Linux Portable Archives
+        run: |
+          mkdir -p dist-installer
+          VERSION=$(cat VERSION | tr -d '[:space:]')
+          TAR_NAME="StreamLab-Linux-${VERSION}-x86_64.tar.gz"
+          tar -czf "dist-installer/$TAR_NAME" -C dist StreamLab
+          cp -f "dist-installer/$TAR_NAME" "dist-installer/StreamLab-Linux-x86_64.tar.gz"
+          (cd dist && zip -rq "../dist-installer/StreamLab-Portable-Linux.zip" StreamLab)
+          echo "Created Linux portable packages:"
+          ls -lh dist-installer/
+
+      - name: Package Debian (.deb) Installer
+        run: |
+          bash installer/linux/build-deb.sh
+          echo "Created Linux Debian package:"
+          ls -lh dist-installer/*.deb
+
+      - name: Upload Linux Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-artifacts
+          path: dist-installer/*
+
+  # =========================================================================
+  # 3. PUBLISH RELEASE: Attach Windows & Linux Artifacts to GitHub Release
+  # =========================================================================
+  publish-release:
+    name: Publish Multi-Platform GitHub Release
+    needs: [build-windows, build-linux]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download Windows Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-artifacts
+          path: release-assets/windows
+
+      - name: Download Linux Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-artifacts
+          path: release-assets/linux
+
+      - name: Consolidate Release Assets
+        run: |
+          mkdir -p final-assets
+          find release-assets/ -type f -exec cp -v {} final-assets/ \;
+          echo "=========================================================="
+          echo "Release Assets Ready for Publication:"
+          ls -lh final-assets/
+          echo "=========================================================="
+
       - name: Extract Tag & Release Notes
         id: release_info
-        shell: pwsh
+        shell: bash
         run: |
-          $ref = "${{ github.ref }}"
-          $tagName = $ref -replace '^refs/tags/', ''
-          if ([string]::IsNullOrWhiteSpace($tagName) -or $tagName.StartsWith("refs/heads/")) {
-            $tagName = "${{ github.event.inputs.version }}"
-          }
-          if ([string]::IsNullOrWhiteSpace($tagName)) {
-            $tagName = "v" + (Get-Content -Path "VERSION" -Raw).Trim()
-          }
-          Write-Output "tag_name=$tagName" >> $env:GITHUB_OUTPUT
+          REF="${{ github.ref }}"
+          TAG_NAME="${REF#refs/tags/}"
+          if [ -z "$TAG_NAME" ] || [[ "$TAG_NAME" == refs/heads/* ]]; then
+            TAG_NAME="${{ github.event.inputs.version }}"
+          fi
+          if [ -z "$TAG_NAME" ]; then
+            TAG_NAME="v$(cat VERSION | tr -d '[:space:]')"
+          fi
+          echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
 
-          $tagMsg = git tag -l --format='%(contents)' $tagName
-          if ([string]::IsNullOrWhiteSpace($tagMsg)) {
-            $tagMsg = "Automated release $tagName of StreamLab Virtual IP Camera Simulator."
-          }
-          "tag_message<<EOF" >> $env:GITHUB_OUTPUT
-          $tagMsg >> $env:GITHUB_OUTPUT
-          "EOF" >> $env:GITHUB_OUTPUT
+          TAG_MSG=$(git tag -l --format='%(contents)' "$TAG_NAME")
+          if [ -z "$TAG_MSG" ]; then
+            TAG_MSG="StreamLab $TAG_NAME - Cross-Platform Release (Windows & Linux). Multi-Protocol Virtual IP Camera Simulator & Interoperability Lab."
+          fi
+          echo "tag_message<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$TAG_MSG" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
 
-      - name: Create GitHub Release and Upload Installer
+      - name: Create GitHub Release and Upload Artifacts
         uses: softprops/action-gh-release@v2
         with:
           name: StreamLab ${{ steps.release_info.outputs.tag_name }}
           body: ${{ steps.release_info.outputs.tag_message }}
           tag_name: ${{ steps.release_info.outputs.tag_name }}
           files: |
-            dist-installer/StreamLab-Setup-*.exe
-            dist-installer/StreamLab-Portable-*.zip
+            final-assets/StreamLab-Setup-*.exe
+            final-assets/StreamLab-*.deb
+            final-assets/StreamLab-*.tar.gz
+            final-assets/StreamLab-*.zip
           generate_release_notes: true
-
-      - name: Upload Logs on Failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-failure-logs
-          path: |
-            build/
-            dist/

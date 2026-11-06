@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=StreamLab
+Comment=Virtual IP Camera Simulator & Interoperability Lab
+Exec=/usr/local/bin/streamlab
+Icon=/opt/streamlab/streamlab.png
+Terminal=false
+Type=Application
+Categories=AudioVideo;Video;Development;Network;
+Keywords=camera;rtsp;rtmp;onvif;streaming;simulator;
+StartupNotify=true

@@ -83,7 +83,7 @@ export default function CtaSection() {
                 className="flex items-center gap-2 px-6 py-3.5 rounded-xl text-sm font-semibold text-slate-300 hover:text-white bg-transparent hover:bg-surface-200 border border-transparent hover:border-border transition-all"
               >
                 <Download className="w-4 h-4 text-emerald-400" />
-                <span>Download Windows .EXE</span>
+                <span>Download Windows &amp; Linux</span>
               </a>
             </div>
           </div>

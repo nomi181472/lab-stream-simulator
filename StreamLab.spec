@@ -1,4 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
+import sys
 from pathlib import Path
 
 block_cipher = None
@@ -34,12 +35,22 @@ hiddenimports = [
     'sqlalchemy.dialects.sqlite',
     'sqlalchemy.dialects.sqlite.aiosqlite',
     'pystray',
-    'pystray._win32',
     'PIL',
     'PIL.Image',
     'PIL.ImageDraw',
     'email_validator',
 ]
+
+if sys.platform == 'win32':
+    hiddenimports.append('pystray._win32')
+elif sys.platform.startswith('linux'):
+    hiddenimports.extend([
+        'pystray._xorg',
+        'pystray._appindicator',
+        'pystray._dummy',
+    ])
+elif sys.platform == 'darwin':
+    hiddenimports.append('pystray._darwin')
 
 a = Analysis(
     ['backend/app/desktop_tray.py'],

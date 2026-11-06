@@ -1,0 +1,10 @@
+Package: streamlab
+Version: 1.0.5
+Section: video
+Priority: optional
+Architecture: amd64
+Depends: ffmpeg
+Maintainer: StreamLab Open Source <https://github.com/nomi181472/lab-stream-simulator>
+Description: Multi-Protocol Virtual IP Camera Simulator & Interoperability Lab
+ StreamLab simulates RTSP, RTMP, HLS, and WebRTC surveillance cameras
+ with an embedded Next.js Mission Control UI, ONVIF discovery, and dynamic synthetic feeds.

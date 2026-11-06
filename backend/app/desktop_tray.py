@@ -1,10 +1,13 @@
 """
-StreamLab Desktop Tray Launcher.
+StreamLab Desktop Launcher.
 Runs the FastAPI Core, MediaMTX, and embedded Mission Control UI in the background,
-and provides a Windows System Tray icon for quick browser access and lifecycle management.
+and provides a System Tray icon (or Headless/Console runner on Linux servers)
+for quick browser access and lifecycle management.
 """
 
 import os
+import signal
+import subprocess
 import sys
 import time
 import threading
@@ -21,7 +24,6 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from PIL import Image, ImageDraw
-import pystray
 import uvicorn
 
 from backend.app.shared.configuration.config import settings
@@ -56,6 +58,7 @@ class StreamLabTrayApp:
         self.server_thread = None
         self.icon = None
         self.is_running = True
+        self._stop_event = threading.Event()
 
     def start_uvicorn(self):
         """Run uvicorn server in background thread."""
@@ -71,32 +74,51 @@ class StreamLabTrayApp:
 
     def open_browser(self, _=None):
         """Open StreamLab Mission Control in user's default browser."""
-        webbrowser.open(f"http://localhost:{settings.API_PORT}")
+        try:
+            webbrowser.open(f"http://localhost:{settings.API_PORT}")
+        except Exception:
+            pass
 
     def open_docs(self, _=None):
         """Open Swagger API docs in user's default browser."""
-        webbrowser.open(f"http://localhost:{settings.API_PORT}/docs")
+        try:
+            webbrowser.open(f"http://localhost:{settings.API_PORT}/docs")
+        except Exception:
+            pass
 
     def open_videos(self, _=None):
-        """Open videos directory in Windows File Explorer."""
+        """Open videos directory in default system file manager."""
         videos_dir = str(settings.VIDEOS_DIR)
-        if os.path.exists(videos_dir):
-            os.startfile(videos_dir)
+        if not os.path.exists(videos_dir):
+            return
+        try:
+            if sys.platform == "win32":
+                os.startfile(videos_dir)
+            elif sys.platform == "darwin":
+                subprocess.run(["open", videos_dir], check=False)
+            else:
+                subprocess.run(["xdg-open", videos_dir], check=False)
+        except Exception as err:
+            print(f"[StreamLab] Could not open file manager: {err}", file=sys.stderr)
 
     def stop_app(self, _=None):
         """Gracefully stop backend, MediaMTX and exit."""
         self.is_running = False
+        self._stop_event.set()
         if self.server:
             self.server.should_exit = True
         if self.icon:
-            self.icon.stop()
+            try:
+                self.icon.stop()
+            except Exception:
+                pass
 
     def run(self):
         # 1. Start backend server in daemon thread
         self.server_thread = threading.Thread(target=self.start_uvicorn, daemon=True)
         self.server_thread.start()
 
-        # 2. Actively wait for backend to be healthy, then pop open browser
+        # 2. Actively wait for backend to be healthy, then pop open browser if GUI desktop is active
         def launch_browser():
             import urllib.request
             # Poll /healthz until server is fully initialized (up to 30 seconds)
@@ -108,34 +130,70 @@ class StreamLabTrayApp:
                             break
                 except Exception:
                     pass
-            self.open_browser()
+
+            has_display = True
+            if sys.platform.startswith("linux"):
+                has_display = bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))
+
+            if has_display:
+                self.open_browser()
 
         threading.Thread(target=launch_browser, daemon=True).start()
 
-        # 3. Build Tray Menu
-        menu = pystray.Menu(
-            pystray.MenuItem("StreamLab Simulator", None, enabled=False),
-            pystray.Menu.SEPARATOR,
-            pystray.MenuItem("🌐 Open Mission Control", self.open_browser, default=True),
-            pystray.MenuItem("📚 API Documentation", self.open_docs),
-            pystray.MenuItem("📁 Open Video Sources", self.open_videos),
-            pystray.Menu.SEPARATOR,
-            pystray.MenuItem("❌ Exit StreamLab", self.stop_app),
-        )
+        # 3. Check if system tray GUI is supported / available
+        can_run_tray = True
+        if sys.platform.startswith("linux"):
+            if not (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")):
+                can_run_tray = False
 
-        # 4. Run System Tray Icon
-        icon_img = create_tray_icon_image()
-        self.icon = pystray.Icon(
-            name="StreamLab",
-            icon=icon_img,
-            title="StreamLab - Virtual IP Camera Simulator",
-            menu=menu,
-        )
+        if can_run_tray:
+            try:
+                import pystray
+                menu = pystray.Menu(
+                    pystray.MenuItem("StreamLab Simulator", None, enabled=False),
+                    pystray.Menu.SEPARATOR,
+                    pystray.MenuItem("🌐 Open Mission Control", self.open_browser, default=True),
+                    pystray.MenuItem("📚 API Documentation", self.open_docs),
+                    pystray.MenuItem("📁 Open Video Sources", self.open_videos),
+                    pystray.Menu.SEPARATOR,
+                    pystray.MenuItem("❌ Exit StreamLab", self.stop_app),
+                )
+                icon_img = create_tray_icon_image()
+                self.icon = pystray.Icon(
+                    name="StreamLab",
+                    icon=icon_img,
+                    title="StreamLab - Virtual IP Camera Simulator",
+                    menu=menu,
+                )
+                self.icon.run()
+                return
+            except Exception as exc:
+                print(f"[StreamLab] System tray GUI not available ({exc}). Running in console mode.", flush=True)
+
+        # 4. Console Fallback Mode (Headless / Linux server / Docker / No system tray)
+        print("=" * 60, flush=True)
+        print(" StreamLab - Virtual IP Camera Simulator", flush=True)
+        print(f" Mission Control UI: http://localhost:{settings.API_PORT}", flush=True)
+        print(f" API Documentation:  http://localhost:{settings.API_PORT}/docs", flush=True)
+        print(" Press Ctrl+C to shut down.", flush=True)
+        print("=" * 60, flush=True)
+
+        def handle_signal(sig, frame):
+            print("\n[StreamLab] Signal received, shutting down gracefully...", flush=True)
+            self.stop_app()
 
         try:
-            self.icon.run()
-        except KeyboardInterrupt:
-            self.stop_app()
+            signal.signal(signal.SIGINT, handle_signal)
+            signal.signal(signal.SIGTERM, handle_signal)
+        except Exception:
+            pass
+
+        while self.is_running and not self._stop_event.is_set():
+            try:
+                self._stop_event.wait(timeout=1.0)
+            except (KeyboardInterrupt, SystemExit):
+                self.stop_app()
+                break
 
 
 def main():

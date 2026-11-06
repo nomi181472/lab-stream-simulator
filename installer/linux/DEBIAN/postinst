@@ -1,0 +1,30 @@
+#!/bin/sh
+set -e
+
+# Ensure binaries have execution permissions
+if [ -f /opt/streamlab/StreamLab ]; then
+    chmod 755 /opt/streamlab/StreamLab || true
+fi
+
+if [ -f /opt/streamlab/streamlab.sh ]; then
+    chmod 755 /opt/streamlab/streamlab.sh || true
+fi
+
+if [ -d /opt/streamlab/bin ]; then
+    chmod -R 755 /opt/streamlab/bin || true
+fi
+
+# Create symlink in /usr/local/bin
+mkdir -p /usr/local/bin
+if [ -f /opt/streamlab/streamlab.sh ]; then
+    ln -sf /opt/streamlab/streamlab.sh /usr/local/bin/streamlab
+else
+    ln -sf /opt/streamlab/StreamLab /usr/local/bin/streamlab
+fi
+
+# Update desktop application database
+if command -v update-desktop-database >/dev/null 2>&1; then
+    update-desktop-database -q /usr/share/applications || true
+fi
+
+exit 0

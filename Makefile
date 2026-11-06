@@ -1,7 +1,7 @@
 PYTHON ?= backend/.venv/Scripts/python.exe
 WSL ?= wsl
 
-.PHONY: help install dev-backend dev-frontend dev-landing build-landing test-backend test-python test-node test-golang test-dart test-dotnet test-kotlin test-all docker-up docker-down
+.PHONY: help install dev-backend dev-frontend dev-landing build-landing test-backend test-python test-node test-golang test-dart test-dotnet test-kotlin test-all docker-up docker-down build-linux build-windows
 
 help:
 	@echo "=========================================================================="
@@ -67,3 +67,9 @@ docker-up:
 
 docker-down:
 	docker compose down -v
+
+build-linux:
+	bash build-installer.sh
+
+build-windows:
+	cmd /c build-installer.bat
