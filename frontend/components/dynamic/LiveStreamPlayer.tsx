@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Hls from "hls.js";
 import { Camera } from "@/types";
-import { Play, Square, RefreshCw, AlertCircle, Eye } from "lucide-react";
+import { Play, Square, RefreshCw, AlertCircle, Eye, Radio, Copy, Check } from "lucide-react";
 
 interface LiveStreamPlayerProps {
   camera: Camera;
@@ -18,6 +18,13 @@ export default function LiveStreamPlayer({ camera, onStart, onStop, onRestart }:
   const [snapshotKey, setSnapshotKey] = useState(Date.now());
   const [useHls, setUseHls] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copiedWs, setCopiedWs] = useState(false);
+
+  const wsUrl =
+    camera.ws_stream_url ||
+    (typeof window !== "undefined"
+      ? `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.hostname}:8000/ws/cameras/${camera.id}/stream`
+      : `ws://localhost:8000/ws/cameras/${camera.id}/stream`);
 
   useEffect(() => {
     let hls: Hls | null = null;
@@ -25,7 +32,9 @@ export default function LiveStreamPlayer({ camera, onStart, onStop, onRestart }:
 
     const resolveHost = (url: string) => {
       if (typeof window === "undefined" || !url) return url;
-      return url.replace("://127.0.0.1:", `://${window.location.hostname}:`).replace("://localhost:", `://${window.location.hostname}:`);
+      return url
+        .replace("://127.0.0.1:", `://${window.location.hostname}:`)
+        .replace("://localhost:", `://${window.location.hostname}:`);
     };
 
     if (camera.status === "running") {
@@ -53,6 +62,12 @@ export default function LiveStreamPlayer({ camera, onStart, onStop, onRestart }:
     };
   }, [camera.status, camera.hls_url, useHls]);
 
+  const handleCopyWsUrl = () => {
+    navigator.clipboard.writeText(wsUrl);
+    setCopiedWs(true);
+    setTimeout(() => setCopiedWs(false), 2000);
+  };
+
   return (
     <div className="relative rounded-lg overflow-hidden bg-black border border-border flex flex-col">
       {/* Video / Snapshot Viewport */}
@@ -62,7 +77,13 @@ export default function LiveStreamPlayer({ camera, onStart, onStop, onRestart }:
             <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
           ) : (
             <img
-              src={`${(typeof window !== "undefined" && camera.snapshot_url ? camera.snapshot_url.replace("://127.0.0.1:", `://${window.location.hostname}:`).replace("://localhost:", `://${window.location.hostname}:`) : camera.snapshot_url)}?t=${snapshotKey}`}
+              src={`${
+                typeof window !== "undefined" && camera.snapshot_url
+                  ? camera.snapshot_url
+                      .replace("://127.0.0.1:", `://${window.location.hostname}:`)
+                      .replace("://localhost:", `://${window.location.hostname}:`)
+                  : camera.snapshot_url
+              }?t=${snapshotKey}`}
               alt={camera.name}
               className="w-full h-full object-cover"
               onError={() => setError("Snapshot stream not yet available")}
@@ -130,6 +151,23 @@ export default function LiveStreamPlayer({ camera, onStart, onStop, onRestart }:
             </button>
           )}
         </div>
+      </div>
+
+      {/* WebSocket Video Stream URL */}
+      <div className="px-3 py-2 bg-slate-950/80 border-t border-border flex items-center justify-between text-xs font-mono">
+        <div className="flex items-center gap-1.5 truncate">
+          <Radio className="w-3.5 h-3.5 text-emerald-400 shrink-0 animate-pulse" />
+          <span className="text-[11px] text-muted-foreground font-sans font-medium shrink-0">WebSocket Stream:</span>
+          <span className="text-emerald-400 truncate max-w-[200px] sm:max-w-xs">{wsUrl}</span>
+        </div>
+        <button
+          onClick={handleCopyWsUrl}
+          className="text-slate-300 hover:text-white ml-2 shrink-0 flex items-center gap-1 text-[11px] bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded transition-colors"
+          title="Copy WebSocket Video Stream URL (Binary JPEG frames)"
+        >
+          {copiedWs ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+          <span>{copiedWs ? "Copied" : "Copy"}</span>
+        </button>
       </div>
     </div>
   );

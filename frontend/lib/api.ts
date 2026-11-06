@@ -83,9 +83,15 @@ export async function fetchVideoSources(): Promise<VideoSource[]> {
 }
 export const getVideoSources = fetchVideoSources;
 
-export async function scanVideoSources(): Promise<VideoSource[]> {
-  const res = await fetch(`${API_BASE}/video-sources/scan`, { method: "POST" });
-  if (!res.ok) throw new Error("Failed to scan directory");
+export async function scanVideoSources(directory?: string): Promise<VideoSource[]> {
+  const url = directory && directory.trim()
+    ? `${API_BASE}/video-sources/scan?directory=${encodeURIComponent(directory.trim())}`
+    : `${API_BASE}/video-sources/scan`;
+  const res = await fetch(url, { method: "POST" });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: "Failed to scan directory" }));
+    throw new Error(err.detail || "Failed to scan directory");
+  }
   return res.json();
 }
 

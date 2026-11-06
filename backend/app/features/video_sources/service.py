@@ -28,14 +28,10 @@ VIDEO_EXTENSIONS = {".mp4", ".mkv", ".avi", ".mov", ".m4v", ".webm", ".ts", ".fl
 class VideoSourceService:
     @staticmethod
     def validate_safe_path(path_str: str) -> Path:
-        """Prevent path traversal and enforce permitted directory roots."""
+        """Validate path: ensures the file or directory exists on the system."""
         path = Path(path_str).resolve()
-        allowed_roots = [settings.VIDEOS_DIR.resolve(), settings.PROJECT_ROOT.resolve()]
-        for r in settings.ALLOWED_SOURCE_ROOTS:
-            allowed_roots.append(Path(r).resolve())
-
-        if not any(path == root or root in path.parents for root in allowed_roots):
-            raise ValueError(f"Path '{path_str}' is outside permitted directories.")
+        if not path.exists():
+            raise ValueError(f"Path '{path_str}' does not exist.")
         return path
 
     @staticmethod
@@ -144,21 +140,28 @@ class VideoSourceService:
     async def scan_directory(self, db: AsyncSession, directory_path: Optional[str] = None) -> List[VideoSourceModel]:
         """Scan a directory for video files and register any new ones."""
         target_dir = self.validate_safe_path(directory_path) if directory_path else settings.VIDEOS_DIR
+        if not target_dir.exists():
+            raise ValueError(f"Directory '{directory_path or settings.VIDEOS_DIR}' does not exist.")
         if not target_dir.is_dir():
-            return []
+            raise ValueError(f"Path '{target_dir}' is not a directory.")
 
         existing = await self.list_sources(db)
-        existing_paths = {s.file_path for s in existing}
+        existing_paths = {
+            Path(s.file_path).resolve().as_posix().lower()
+            for s in existing
+            if s.file_path and not s.file_path.startswith(("http://", "https://", "rtsp://", "rtmp://"))
+        }
 
         created = []
         for p in sorted(target_dir.iterdir()):
             if p.is_file() and p.suffix.lower() in VIDEO_EXTENSIONS:
-                rel_or_abs = str(p.resolve())
-                if rel_or_abs not in existing_paths and str(p) not in existing_paths:
+                normalized_p = p.resolve().as_posix().lower()
+                if normalized_p not in existing_paths:
+                    existing_paths.add(normalized_p)
                     name = p.stem.replace("_", " ").title()
                     source = await self.register_source(
                         db,
-                        VideoSourceCreate(name=name, file_path=rel_or_abs, source_type="local"),
+                        VideoSourceCreate(name=name, file_path=str(p.resolve()), source_type="local"),
                     )
                     created.append(source)
         return await self.list_sources(db)

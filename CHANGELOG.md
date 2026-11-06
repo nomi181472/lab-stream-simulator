@@ -2,6 +2,9 @@
 
 All notable changes to the StreamLab project are documented in this file.
 
+## [1.0.4] - 2026-11-06
+- feat(ui): custom scan directory input and websocket live streaming display
+
 ## [1.0.3] - 2026-11-06
 - feat(ui): display direct websocket video stream urls on camera cards and websocket console
 

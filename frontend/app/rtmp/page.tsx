@@ -196,6 +196,30 @@ export default function RtmpPage() {
                   </div>
                 </div>
 
+                <div>
+                  <span className="text-slate-400 block mb-1">WebSocket Video Stream:</span>
+                  {(() => {
+                    const wsUrl = selectedCamera.ws_stream_url || (typeof window !== "undefined" ? `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.hostname}:8000/ws/cameras/${selectedCamera.id}/stream` : `ws://localhost:8000/ws/cameras/${selectedCamera.id}/stream`);
+                    return (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          readOnly
+                          value={wsUrl}
+                          className="w-full bg-slate-950 border border-slate-700/60 rounded px-2.5 py-1.5 font-mono text-emerald-400 text-[11px]"
+                        />
+                        <button
+                          onClick={() => copyToClipboard(wsUrl)}
+                          className="px-2.5 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700 whitespace-nowrap"
+                          title="Copy WebSocket Video Stream URL (Binary JPEG frames)"
+                        >
+                          {copiedUrl === wsUrl ? 'Copied' : 'Copy'}
+                        </button>
+                      </div>
+                    );
+                  })()}
+                </div>
+
                 <div className="pt-2 border-t border-slate-700/40 space-y-1.5">
                   <div className="flex justify-between">
                     <span className="text-slate-400">Stream Status:</span>

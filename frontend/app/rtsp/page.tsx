@@ -180,6 +180,22 @@ export default function RtspPage() {
                 </div>
 
                 <div className="flex justify-between py-1 border-b border-slate-700/40">
+                  <span className="text-slate-400">WebSocket:</span>
+                  {(() => {
+                    const wsUrl = selectedCamera.ws_stream_url || (typeof window !== "undefined" ? `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.hostname}:8000/ws/cameras/${selectedCamera.id}/stream` : `ws://localhost:8000/ws/cameras/${selectedCamera.id}/stream`);
+                    return (
+                      <button
+                        onClick={() => copyToClipboard(wsUrl)}
+                        className="font-mono text-emerald-400 hover:underline max-w-[180px] truncate"
+                        title="Copy WebSocket Video Stream URL (Binary JPEG frames)"
+                      >
+                        {copiedUrl === wsUrl ? 'Copied!' : wsUrl}
+                      </button>
+                    );
+                  })()}
+                </div>
+
+                <div className="flex justify-between py-1 border-b border-slate-700/40">
                   <span className="text-slate-400">Resolution:</span>
                   <span className="font-mono text-slate-200">{selectedCamera.resolution}</span>
                 </div>
