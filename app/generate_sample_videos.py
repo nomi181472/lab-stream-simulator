@@ -58,8 +58,8 @@ def generate_cctv_video(
     filters = (
         f"smptebars=size={width}x{height}:rate={fps},"
         f"drawgrid=width=100:height=100:thickness=1:color=white@0.08,"
-        f"drawbox=y={height-36}:h=36:color=black@0.7:t=fill,"
-        f"drawtext={font_opt}text='HIKVISION SURVEILLANCE NETWORK | 1080p Stream':x=20:y={height-26}:fontsize=16:fontcolor=lightgrey"
+        f"drawbox=y={height-42}:h=42:color=black@0.7:t=fill,"
+        f"drawtext={font_opt}text='HIKVISION SURVEILLANCE NETWORK | 1080p Stream':x=20:y={height-32}:fontsize=20:fontcolor=lightgrey"
     )
 
     cmd = [

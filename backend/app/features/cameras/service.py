@@ -231,7 +231,7 @@ class CameraService:
         else:
             font_opt = "font='Arial':"
 
-        font_size = cam.overlay_font_size or 22
+        font_size = cam.overlay_font_size or 32
         bg_color = cam.overlay_bg_color or "black@0.5"
         font_color = cam.overlay_font_color or "yellow"
         position = cam.overlay_position or "top"
@@ -245,12 +245,14 @@ class CameraService:
         header_text = f"{safe_name} ({cam.id}){custom_txt}"
 
         time_fmt = "%Y-%m-%d %T" if overlay_format == "24h" else "%Y-%m-%d %I:%M:%S %p"
-        y_box = "0" if position == "top" else f"h-{font_size * 2}"
-        y_text = "12" if position == "top" else f"h-{int(font_size * 1.5)}"
+        box_pad = max(10, int(font_size * 0.38))
+        box_h = font_size + (box_pad * 2)
+        y_box = "0" if position == "top" else f"h-{box_h}"
+        y_text = str(box_pad) if position == "top" else f"h-{font_size + box_pad}"
 
         filters = []
         if cam.overlay_enabled:
-            filters.append(f"drawbox=y={y_box}:h={font_size * 2}:color={bg_color}:t=fill")
+            filters.append(f"drawbox=y={y_box}:h={box_h}:color={bg_color}:t=fill")
             filters.append(
                 f"drawtext={font_opt}text='{header_text}':x=20:y={y_text}:"
                 f"fontsize={font_size}:fontcolor=white:shadowcolor=black:shadowx=2:shadowy=2"

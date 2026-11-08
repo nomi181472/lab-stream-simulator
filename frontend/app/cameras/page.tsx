@@ -18,6 +18,7 @@ export default function CameraManagerPage() {
   const [fps, setFps] = useState(25);
   const [bitrate, setBitrate] = useState(2048);
   const [overlayText, setOverlayText] = useState("");
+  const [overlayFontSize, setOverlayFontSize] = useState(32);
 
   const { data: cameras = [], isLoading } = useQuery({
     queryKey: ["cameras"],
@@ -41,10 +42,12 @@ export default function CameraManagerPage() {
       bitrate_kbps: bitrate,
       overlay_enabled: true,
       overlay_custom_text: overlayText,
+      overlay_font_size: overlayFontSize,
     });
     setIsModalOpen(false);
     setName("");
     setOverlayText("");
+    setOverlayFontSize(32);
     queryClient.invalidateQueries({ queryKey: ["cameras"] });
   };
 
@@ -158,7 +161,12 @@ export default function CameraManagerPage() {
                   <span>
                     {cam.resolution_width}x{cam.resolution_height} • {cam.fps} FPS
                   </span>
-                  <span>{cam.stats?.readers_count || 0} Readers</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded font-mono">
+                      OSD {cam.overlay_font_size || 32}px
+                    </span>
+                    <span>{cam.stats?.readers_count || 0} Readers</span>
+                  </div>
                 </div>
               </div>
 
@@ -277,15 +285,28 @@ export default function CameraManagerPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-muted-foreground mb-1">Timestamp Custom Text</label>
-                <input
-                  type="text"
-                  value={overlayText}
-                  onChange={(e) => setOverlayText(e.target.value)}
-                  placeholder="e.g. GATE-A | NORTH WING"
-                  className="w-full bg-slate-950 border border-border rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-primary"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-muted-foreground mb-1">Timestamp Custom Text</label>
+                  <input
+                    type="text"
+                    value={overlayText}
+                    onChange={(e) => setOverlayText(e.target.value)}
+                    placeholder="e.g. GATE-A | NORTH WING"
+                    className="w-full bg-slate-950 border border-border rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+                <div>
+                  <label className="block text-muted-foreground mb-1">OSD Font Size (px)</label>
+                  <input
+                    type="number"
+                    value={overlayFontSize}
+                    onChange={(e) => setOverlayFontSize(Number(e.target.value))}
+                    min={12}
+                    max={72}
+                    className="w-full bg-slate-950 border border-border rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">

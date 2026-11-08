@@ -48,7 +48,7 @@ class CameraModel(Base):
     overlay_format: Mapped[str] = mapped_column(String(32), default="24h")  # 12h, 24h
     overlay_timezone: Mapped[str] = mapped_column(String(64), default="UTC")
     overlay_custom_text: Mapped[str] = mapped_column(String(255), default="")
-    overlay_font_size: Mapped[int] = mapped_column(Integer, default=22)
+    overlay_font_size: Mapped[int] = mapped_column(Integer, default=32)
     overlay_font_color: Mapped[str] = mapped_column(String(32), default="yellow")
     overlay_bg_color: Mapped[str] = mapped_column(String(32), default="black@0.5")
     overlay_position: Mapped[str] = mapped_column(String(32), default="top")  # top, bottom

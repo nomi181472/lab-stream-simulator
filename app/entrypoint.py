@@ -396,6 +396,7 @@ def load_streams_config(
         "api_port": int(os.environ.get("API_PORT", 9997)),
         "log_level": os.environ.get("LOG_LEVEL", "info"),
         "live_timestamp": coerce_bool(os.environ.get("LIVE_TIMESTAMP", "true"), True),
+        "font_size": int(os.environ.get("FONT_SIZE", 32)),
         "username": os.environ.get("RTSP_USERNAME", "admin"),
         "password": os.environ.get("RTSP_PASSWORD", "Password123"),
         "auto_discover": coerce_bool(os.environ.get("AUTO_DISCOVER", "true"), True),
@@ -423,6 +424,8 @@ def load_streams_config(
                         "source": ch.get("source", ch.get("url", ch.get("path", ""))),
                         "description": ch.get("description", ""),
                         "live_timestamp": ch.get("live_timestamp", server_opts["live_timestamp"]),
+                    "font_size": int(ch.get("font_size", server_opts["font_size"])),
+                        "font_size": int(ch.get("font_size", server_opts["font_size"])),
                     })
         elif isinstance(raw_channels, dict):
             for ch_id, ch_val in raw_channels.items():
@@ -433,6 +436,7 @@ def load_streams_config(
                         "source": ch_val.get("source", ch_val.get("url", "")),
                         "description": ch_val.get("description", ""),
                         "live_timestamp": ch_val.get("live_timestamp", server_opts["live_timestamp"]),
+                        "font_size": int(ch_val.get("font_size", server_opts["font_size"])),
                     })
                 elif isinstance(ch_val, str):
                     channels.append({
@@ -441,6 +445,7 @@ def load_streams_config(
                         "source": ch_val,
                         "description": "",
                         "live_timestamp": server_opts["live_timestamp"],
+                        "font_size": server_opts["font_size"],
                     })
         else:
             for k, v in raw.items():
@@ -451,6 +456,7 @@ def load_streams_config(
                         "source": v,
                         "description": "",
                         "live_timestamp": server_opts["live_timestamp"],
+                        "font_size": server_opts["font_size"],
                     })
 
     elif isinstance(raw, list):
@@ -463,6 +469,7 @@ def load_streams_config(
                     "source": ch.get("source", ch.get("url", ch.get("path", ""))),
                     "description": ch.get("description", ""),
                     "live_timestamp": ch.get("live_timestamp", server_opts["live_timestamp"]),
+                    "font_size": int(ch.get("font_size", server_opts["font_size"])),
                 })
 
     if apply_discovery and server_opts.get("auto_discover", True):
@@ -607,6 +614,9 @@ def build_mediamtx_yaml(server_opts: Dict[str, Any], channels: List[Dict[str, An
         legacy_path = f"ch{legacy_ch_num}/main/av_stream"
 
         use_timestamp = ch.get("live_timestamp", server_opts.get("live_timestamp", True))
+        font_size = int(ch.get("font_size", server_opts.get("font_size", 32)))
+        box_pad = max(10, int(font_size * 0.38))
+        box_h = font_size + (box_pad * 2)
 
         # Use TCP interleaved RTSP transport to prevent UDP packet loss and FU-A errors
         tee_target = (
@@ -619,9 +629,9 @@ def build_mediamtx_yaml(server_opts: Dict[str, Any], channels: List[Dict[str, An
             safe_name = ch_name.replace("'", "")
             font_opt = render_fontfile_option()
             filter_str = (
-                f"drawbox=y=0:h=46:color=black@0.5:t=fill,"
-                f"drawtext={font_opt}text='[HIKVISION] {safe_name} (CH-{ch_id})':x=20:y=12:fontsize=22:fontcolor=white:shadowcolor=black:shadowx=2:shadowy=2,"
-                f"drawtext={font_opt}text='%{{localtime\\:%Y-%m-%d %T}}':x=w-tw-20:y=12:fontsize=22:fontcolor=yellow:shadowcolor=black:shadowx=2:shadowy=2"
+                f"drawbox=y=0:h={box_h}:color=black@0.5:t=fill,"
+                f"drawtext={font_opt}text='[HIKVISION] {safe_name} (CH-{ch_id})':x=20:y={box_pad}:fontsize={font_size}:fontcolor=white:shadowcolor=black:shadowx=2:shadowy=2,"
+                f"drawtext={font_opt}text='%{{localtime\\:%Y-%m-%d %T}}':x=w-tw-20:y={box_pad}:fontsize={font_size}:fontcolor=yellow:shadowcolor=black:shadowx=2:shadowy=2"
             )
             # Use libopus audio codec so WebRTC browsers (Chrome/Firefox/Safari) can play audio without dropping track
             ffmpeg_cmd = (
@@ -656,7 +666,7 @@ def build_mediamtx_yaml(server_opts: Dict[str, Any], channels: List[Dict[str, An
             "type": src_type,
             "source": resolved_src,
             "description": ch.get("description", ""),
-            "live_timestamp": "ACTIVE (Continuous Real-Time Clock, Never Repeats)" if use_timestamp else "OFF (Stream Copy)",
+            "live_timestamp": f"ACTIVE ({font_size}px Continuous Real-Time Clock, Never Repeats)" if use_timestamp else "OFF (Stream Copy)",
             "res": meta.get("res", ""),
             "fps": meta.get("fps", ""),
             "direct_path": direct_path,

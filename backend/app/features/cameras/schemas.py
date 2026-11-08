@@ -33,7 +33,7 @@ class CameraBase(BaseModel):
     overlay_format: str = Field("24h", pattern="^(12h|24h)$")
     overlay_timezone: str = "UTC"
     overlay_custom_text: str = ""
-    overlay_font_size: int = Field(22, ge=10, le=72)
+    overlay_font_size: int = Field(32, ge=10, le=72)
     overlay_font_color: str = "yellow"
     overlay_bg_color: str = "black@0.5"
     overlay_position: str = Field("top", pattern="^(top|bottom)$")

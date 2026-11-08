@@ -2,6 +2,9 @@
 
 All notable changes to the StreamLab project are documented in this file.
 
+## [1.0.6] - 2026-11-08
+- feat(osd): increase stream timestamp and camera overlay font size for enhanced legibility
+
 ## [1.0.5] - 2026-11-06
 - feat: add cross-platform Linux standalone executable, Debian (.deb) package, and dual CI/CD pipeline
 

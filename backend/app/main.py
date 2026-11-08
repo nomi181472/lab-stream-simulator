@@ -11,9 +11,11 @@ if sys.platform == "win32":
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import update
 
 from backend.app.features.authentication.router import router as auth_router
 from backend.app.features.cameras.router import router as cameras_router
+from backend.app.features.cameras.models import CameraModel
 from backend.app.features.cameras.schemas import CameraCreate
 from backend.app.features.cameras.service import camera_service
 from backend.app.features.observability.router import router as observability_router
@@ -90,6 +92,15 @@ async def lifespan(app: FastAPI):
             except Exception as e:
                 logger.warning(f"Failed to provision default cameras: {e}")
 
+        # Upgrade existing cameras with legacy small font size (22) to larger readable size (32)
+        try:
+            await db.execute(
+                update(CameraModel).where(CameraModel.overlay_font_size == 22).values(overlay_font_size=32)
+            )
+            await db.commit()
+        except Exception:
+            pass
+
         # Auto-start cameras on boot so RTSP feeds are actively broadcasting
         active_cams = await camera_service.list_cameras(db)
         for c in active_cams:
@@ -124,7 +135,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="StreamLab",
     description="Multi-Protocol IP Camera Simulator & Interoperability Lab",
-    version="1.0.5",
+    version="1.0.6",
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",
