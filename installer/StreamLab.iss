@@ -2,7 +2,7 @@
 ; Creates a single StreamLab-Setup-1.0.0.exe installer for Windows
 
 #define MyAppName "StreamLab"
-#define MyAppVersion "1.0.6"
+#define MyAppVersion "1.0.7"
 #define MyAppPublisher "StreamLab Open Source"
 #define MyAppURL "https://github.com/botonetics/streamlab"
 #define MyAppExeName "StreamLab.exe"

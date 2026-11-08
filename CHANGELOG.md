@@ -2,6 +2,9 @@
 
 All notable changes to the StreamLab project are documented in this file.
 
+## [1.0.7] - 2026-11-08
+- feat(cameras): human-readable and unforgettable camera IDs for RTSP, RTMP, and WebSocket streams, with custom slug provisioning, live URL preview, and edit/rename capability
+
 ## [1.0.6] - 2026-11-08
 - feat(osd): increase stream timestamp and camera overlay font size for enhanced legibility
 

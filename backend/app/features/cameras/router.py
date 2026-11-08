@@ -31,6 +31,8 @@ async def create_camera(
 ):
     try:
         return await camera_service.create_camera(db, req)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -52,10 +54,15 @@ async def update_camera(
     req: CameraUpdate,
     db: AsyncSession = Depends(get_db_session),
 ):
-    cam = await camera_service.update_camera(db, camera_id, req)
-    if not cam:
-        raise HTTPException(status_code=404, detail=f"Camera '{camera_id}' not found")
-    return cam
+    try:
+        cam = await camera_service.update_camera(db, camera_id, req)
+        if not cam:
+            raise HTTPException(status_code=404, detail=f"Camera '{camera_id}' not found")
+        return cam
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.delete("/{camera_id}", status_code=status.HTTP_204_NO_CONTENT)

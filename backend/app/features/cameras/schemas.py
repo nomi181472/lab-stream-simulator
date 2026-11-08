@@ -44,7 +44,9 @@ class CameraCreate(CameraBase):
 
 
 class CameraUpdate(BaseModel):
+    id: Optional[str] = None
     name: Optional[str] = None
+    serial_number: Optional[str] = None
     video_source_id: Optional[str] = None
     playlist_mode: Optional[str] = None
     resolution_width: Optional[int] = None

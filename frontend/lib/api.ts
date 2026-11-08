@@ -50,7 +50,22 @@ export async function createCamera(data: Partial<Camera>): Promise<Camera> {
     const err = await res.json().catch(() => ({ detail: "Failed to create camera" }));
     throw new Error(err.detail || "Failed to create camera");
   }
-  return res.json();
+  const created: Camera = await res.json();
+  return normalizeCameraUrls(created);
+}
+
+export async function updateCamera(id: string, data: Partial<Camera>): Promise<Camera> {
+  const res = await fetch(`${API_BASE}/cameras/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: "Failed to update camera" }));
+    throw new Error(err.detail || "Failed to update camera");
+  }
+  const updated: Camera = await res.json();
+  return normalizeCameraUrls(updated);
 }
 
 export async function startCamera(id: string): Promise<Camera> {

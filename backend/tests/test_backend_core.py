@@ -175,3 +175,46 @@ async def test_authentication_service_and_endpoints():
         assert data["valid"] is True
         assert data["user"] == "admin"
 
+
+
+@pytest.mark.asyncio
+async def test_human_readable_and_unforgettable_camera_ids():
+    async with async_session_maker() as db:
+        from backend.app.features.cameras.schemas import CameraUpdate
+
+        # 1. Create camera with no ID -> derives readable slug from name
+        cam1 = await camera_service.create_camera(
+            db,
+            CameraCreate(name="Front Entrance Camera")
+        )
+        assert cam1.id == "front-entrance-camera"
+        assert "/cameras/front-entrance-camera/main" in cam1.rtsp_url
+        assert "/cameras/front-entrance-camera/main" in cam1.rtmp_url
+        assert "/ws/cameras/front-entrance-camera/stream" in cam1.ws_stream_url
+
+        # 2. Collision handling -> appends sequential suffix
+        cam2 = await camera_service.create_camera(
+            db,
+            CameraCreate(name="Front Entrance Camera")
+        )
+        assert cam2.id == "front-entrance-camera-2"
+        assert "/cameras/front-entrance-camera-2/main" in cam2.rtsp_url
+
+        # 3. Rename camera ID -> updates all stream paths and URLs
+        updated = await camera_service.update_camera(
+            db,
+            cam1.id,
+            CameraUpdate(id="gate-north-01")
+        )
+        assert updated.id == "gate-north-01"
+        assert "/cameras/gate-north-01/main" in updated.rtsp_url
+        assert "/cameras/gate-north-01/main" in updated.rtmp_url
+        assert "/ws/cameras/gate-north-01/stream" in updated.ws_stream_url
+
+        # Verify old ID is gone and new ID is fetchable
+        assert await camera_service.get_camera(db, "front-entrance-camera") is None
+        assert await camera_service.get_camera(db, "gate-north-01") is not None
+
+        # Clean up
+        await camera_service.delete_camera(db, "gate-north-01")
+        await camera_service.delete_camera(db, "front-entrance-camera-2")

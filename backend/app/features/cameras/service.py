@@ -5,12 +5,13 @@ Manages virtual camera lifecycle, dynamic FFmpeg command generation, and MediaMT
 
 import asyncio
 import os
+import re
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 import httpx
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.features.cameras.models import CameraModel
@@ -27,6 +28,14 @@ from backend.app.shared.logging.logger import get_logger
 from backend.app.shared.subprocesses.manager import process_manager
 
 logger = get_logger(__name__, feature="cameras")
+
+
+def slugify_camera_id(text: str) -> str:
+    """Convert a camera name or requested ID into a clean, human-readable, URL-safe slug."""
+    text = (text or "").strip().lower()
+    text = re.sub(r"[^a-z0-9_-]+", "-", text)
+    text = re.sub(r"-+", "-", text)
+    return text.strip("-_")
 
 
 class CameraService:
@@ -49,6 +58,39 @@ class CameraService:
             "webrtc_url": webrtc_url,
             "ws_stream_url": ws_stream_url,
         }
+
+    async def resolve_camera_id(self, db: AsyncSession, requested_id: Optional[str], name: Optional[str]) -> str:
+        """Resolve a human-readable, unforgettable camera ID."""
+        res = await db.execute(select(CameraModel.id))
+        existing_ids = set(res.scalars().all())
+
+        if requested_id and requested_id.strip():
+            clean_id = slugify_camera_id(requested_id)
+            if not clean_id:
+                clean_id = "cam"
+            if clean_id in existing_ids:
+                raise ValueError(f"Camera ID '{clean_id}' already exists. Please choose a unique ID.")
+            return clean_id
+
+        # Derive unforgettable slug from camera name
+        base_slug = slugify_camera_id(name or "")
+        if not base_slug:
+            base_slug = "cam"
+
+        if base_slug not in existing_ids:
+            return base_slug
+
+        # If base is cam, use sequential cam-01, cam-02...
+        if base_slug in ("cam", "camera"):
+            i = 1
+            while f"cam-{i:02d}" in existing_ids or f"cam-{i}" in existing_ids:
+                i += 1
+            return f"cam-{i:02d}"
+
+        counter = 2
+        while f"{base_slug}-{counter}" in existing_ids:
+            counter += 1
+        return f"{base_slug}-{counter}"
 
     async def get_stream_stats(self, cam_id: str) -> StreamStats:
         """Query MediaMTX API for real stream stats (readers count, publishing state)."""
@@ -118,7 +160,7 @@ class CameraService:
         )
 
     async def create_camera(self, db: AsyncSession, req: CameraCreate) -> CameraResponse:
-        cam_id = req.id or f"cam-{uuid.uuid4().hex[:6]}"
+        cam_id = await self.resolve_camera_id(db, req.id, req.name)
         serial = req.serial_number or f"SL-SN-{cam_id.upper()}"
 
         rtsp_path = f"cameras/{cam_id}/main"
@@ -184,23 +226,52 @@ class CameraService:
         if not cam:
             return None
 
+        new_id = slugify_camera_id(req.id) if (req.id and req.id.strip()) else None
+        id_changed = new_id is not None and new_id != camera_id
+
+        if id_changed:
+            conflict_res = await db.execute(select(CameraModel).where(CameraModel.id == new_id))
+            if conflict_res.scalar_one_or_none():
+                raise ValueError(f"Camera ID '{new_id}' already exists")
+
         was_running = cam.status == "running"
         if was_running:
             await self.stop_camera(db, camera_id)
 
-        for k, v in req.model_dump(exclude_unset=True).items():
-            setattr(cam, k, v)
+        update_dict = req.model_dump(exclude_unset=True)
+        if "id" in update_dict:
+            del update_dict["id"]
 
-        await db.commit()
-        await db.refresh(cam)
+        if id_changed:
+            update_dict["id"] = new_id
+            update_dict["rtsp_path"] = f"cameras/{new_id}/main"
+            update_dict["rtmp_path"] = f"cameras/{new_id}/main"
+            update_dict["snapshot_path"] = f"api/v1/cameras/{new_id}/snapshot.jpg"
+
+            await db.execute(
+                update(CameraModel)
+                .where(CameraModel.id == camera_id)
+                .values(**update_dict)
+            )
+            await db.commit()
+
+            refetch = await db.execute(select(CameraModel).where(CameraModel.id == new_id))
+            cam = refetch.scalar_one()
+            effective_id = new_id
+        else:
+            for k, v in update_dict.items():
+                setattr(cam, k, v)
+            await db.commit()
+            await db.refresh(cam)
+            effective_id = camera_id
 
         if was_running:
-            await self.start_camera(db, camera_id)
+            await self.start_camera(db, effective_id)
 
         await ws_manager.broadcast_event(
             "camera.status",
             cam.id,
-            {"status": cam.status, "action": "updated"},
+            {"status": cam.status, "action": "updated", "old_id": camera_id if id_changed else None},
         )
         return await self.to_response(cam)
 
