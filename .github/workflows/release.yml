@@ -47,11 +47,7 @@ jobs:
         shell: pwsh
         run: |
           if (-not (Test-Path "bin\mediamtx.exe")) {
-            Write-Host "Downloading MediaMTX for Windows..."
-            New-Item -ItemType Directory -Force -Path "bin"
-            Invoke-WebRequest -Uri "https://github.com/bluenviron/mediamtx/releases/download/v1.21.0/mediamtx_v1.21.0_windows_amd64.zip" -OutFile "mediamtx.zip"
-            Expand-Archive -Path "mediamtx.zip" -DestinationPath "bin" -Force
-            Remove-Item "mediamtx.zip" -Force
+            python scripts/download_mediamtx.py windows
           }
 
       - name: Install Python Dependencies
@@ -156,7 +152,7 @@ jobs:
       - name: Install Linux Build Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y dpkg-dev ffmpeg libappindicator3-1 libayatana-appindicator3-1 zip
+          sudo apt-get install -y dpkg-dev ffmpeg libayatana-appindicator3-1 zip
 
       - name: Install Python Dependencies
         run: |
@@ -166,11 +162,7 @@ jobs:
 
       - name: Download Linux MediaMTX Binary
         run: |
-          mkdir -p bin
-          curl -sSL -o mediamtx.tar.gz "https://github.com/bluenviron/mediamtx/releases/download/v1.21.0/mediamtx_v1.21.0_linux_amd64.tar.gz"
-          tar -xzf mediamtx.tar.gz -C bin mediamtx
-          chmod +x bin/mediamtx
-          rm -f mediamtx.tar.gz
+          python3 scripts/download_mediamtx.py linux
           echo "Verified MediaMTX Linux binary:"
           file bin/mediamtx
 
