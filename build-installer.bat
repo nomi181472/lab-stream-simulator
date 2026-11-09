@@ -56,8 +56,9 @@ if %ERRORLEVEL% NEQ 0 (
 
 :: Ensure directories exist in dist\StreamLab
 if not exist "dist\StreamLab\videos" (
-    echo Copying videos into dist...
-    xcopy /E /I /Y "videos" "dist\StreamLab\videos"
+    echo Creating videos directory in dist...
+    mkdir "dist\StreamLab\videos"
+    echo Place your video files (.mp4, .mkv, .avi, etc.) here or upload them via Mission Control. > "dist\StreamLab\videos\README.txt"
 )
 if not exist "dist\StreamLab\bin" (
     echo Copying bin into dist...

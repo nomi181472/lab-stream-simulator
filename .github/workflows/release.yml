@@ -85,7 +85,8 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path "dist/StreamLab/videos", "dist/StreamLab/bin", "dist/StreamLab/config", "dist/StreamLab/frontend/out"
-          if (Test-Path "videos") { Copy-Item -Path "videos/*" -Destination "dist/StreamLab/videos" -Recurse -Force }
+          # Exclude heavy default videos from release archives to keep zip and installer size minimal
+          Set-Content -Path "dist/StreamLab/videos/README.txt" -Value "Place your video files (.mp4, .mkv, .avi, etc.) here or upload them via Mission Control."
           if (Test-Path "bin") { Copy-Item -Path "bin/*" -Destination "dist/StreamLab/bin" -Recurse -Force }
           if (Test-Path "config") { Copy-Item -Path "config/*" -Destination "dist/StreamLab/config" -Recurse -Force }
           Copy-Item -Path "frontend/out/*" -Destination "dist/StreamLab/frontend/out" -Recurse -Force
@@ -189,7 +190,8 @@ jobs:
       - name: Assemble Linux Auxiliary Files & Permissions
         run: |
           mkdir -p dist/StreamLab/videos dist/StreamLab/bin dist/StreamLab/config dist/StreamLab/frontend/out
-          if [ -d "videos" ]; then cp -r videos/* dist/StreamLab/videos/; fi
+          # Exclude heavy default videos from release archives to keep package size minimal
+          echo "Place your video files (.mp4, .mkv, .avi, etc.) here or upload them via Mission Control." > dist/StreamLab/videos/README.txt
           if [ -d "config" ]; then cp -r config/* dist/StreamLab/config/; fi
           cp -r frontend/out/* dist/StreamLab/frontend/out/
           cp bin/mediamtx dist/StreamLab/bin/

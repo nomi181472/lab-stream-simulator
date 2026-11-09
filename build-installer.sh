@@ -85,7 +85,7 @@ $PYTHON_CMD -m PyInstaller --noconfirm StreamLab.spec
 
 # Ensure auxiliary directories exist in dist/StreamLab
 mkdir -p dist/StreamLab/videos dist/StreamLab/bin dist/StreamLab/config dist/StreamLab/frontend/out
-if [ -d "videos" ]; then cp -r videos/* dist/StreamLab/videos/; fi
+echo "Place your video files (.mp4, .mkv, .avi, etc.) here or upload them via Mission Control." > dist/StreamLab/videos/README.txt
 if [ -d "config" ]; then cp -r config/* dist/StreamLab/config/; fi
 cp -r frontend/out/* dist/StreamLab/frontend/out/
 

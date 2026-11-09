@@ -71,11 +71,14 @@ class SnapshotService:
                 source_file = src.file_path
 
         if not source_file or not Path(source_file).exists():
-            default_vids = list(settings.VIDEOS_DIR.glob("*.mp4"))
+            default_vids = list(settings.VIDEOS_DIR.glob("*.mp4")) if settings.VIDEOS_DIR.exists() else []
             if default_vids:
                 source_file = str(default_vids[0].resolve())
             else:
-                raise FileNotFoundError("No source video file available for snapshot generation")
+                raise FileNotFoundError(
+                    "No source video file available for snapshot generation. "
+                    "Please upload or assign a video file in Mission Control -> Video Sources."
+                )
 
         cmd = [
             ffmpeg,

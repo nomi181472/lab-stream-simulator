@@ -93,8 +93,7 @@ class StreamLabTrayApp:
     def open_videos(self, _=None):
         """Open videos directory in default system file manager."""
         videos_dir = str(settings.VIDEOS_DIR)
-        if not os.path.exists(videos_dir):
-            return
+        os.makedirs(videos_dir, exist_ok=True)
         try:
             if sys.platform == "win32":
                 os.startfile(videos_dir)

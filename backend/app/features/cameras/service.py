@@ -376,11 +376,14 @@ class CameraService:
 
         if not source_path or not os.path.exists(source_path):
             # Fallback to default fixture video in videos/
-            default_vids = list(settings.VIDEOS_DIR.glob("*.mp4"))
+            default_vids = list(settings.VIDEOS_DIR.glob("*.mp4")) if settings.VIDEOS_DIR.exists() else []
             if default_vids:
                 source_path = str(default_vids[0].resolve())
             else:
-                raise RuntimeError(f"No valid video source found for camera {camera_id}")
+                raise RuntimeError(
+                    f"No video source available for camera '{camera_id}'. "
+                    "Please upload or assign a video file in Mission Control -> Video Sources."
+                )
 
         cmd = self.build_ffmpeg_command(cam, source_path)
 

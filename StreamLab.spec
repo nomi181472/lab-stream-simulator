@@ -13,8 +13,8 @@ datas = [
 if (PROJECT_ROOT / 'bin').is_dir():
     datas.append(('bin', 'bin'))
 
-if (PROJECT_ROOT / 'videos').is_dir():
-    datas.append(('videos', 'videos'))
+# Videos are excluded from standalone bundles to minimize package size.
+# Users can upload videos via Mission Control or place them in the videos/ directory.
 
 if (PROJECT_ROOT / 'frontend' / 'out').is_dir():
     datas.append(('frontend/out', 'frontend/out'))

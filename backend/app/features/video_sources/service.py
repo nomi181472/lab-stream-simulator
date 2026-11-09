@@ -139,11 +139,15 @@ class VideoSourceService:
 
     async def scan_directory(self, db: AsyncSession, directory_path: Optional[str] = None) -> List[VideoSourceModel]:
         """Scan a directory for video files and register any new ones."""
-        target_dir = self.validate_safe_path(directory_path) if directory_path else settings.VIDEOS_DIR
-        if not target_dir.exists():
-            raise ValueError(f"Directory '{directory_path or settings.VIDEOS_DIR}' does not exist.")
-        if not target_dir.is_dir():
-            raise ValueError(f"Path '{target_dir}' is not a directory.")
+        if directory_path:
+            target_dir = self.validate_safe_path(directory_path)
+            if not target_dir.exists():
+                raise ValueError(f"Directory '{directory_path}' does not exist.")
+            if not target_dir.is_dir():
+                raise ValueError(f"Path '{target_dir}' is not a directory.")
+        else:
+            settings.VIDEOS_DIR.mkdir(parents=True, exist_ok=True)
+            target_dir = settings.VIDEOS_DIR
 
         existing = await self.list_sources(db)
         existing_paths = {
