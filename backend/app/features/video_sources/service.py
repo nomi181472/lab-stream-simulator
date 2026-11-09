@@ -166,5 +166,34 @@ class VideoSourceService:
                     created.append(source)
         return await self.list_sources(db)
 
+    async def delete_source(self, db: AsyncSession, source_id: str, delete_file: bool = False) -> bool:
+        """Delete a video source from database and optionally remove the file from disk."""
+        source = await self.get_source(db, source_id)
+        if not source:
+            return False
+
+        # Unbind any cameras currently referencing this video source
+        from backend.app.features.cameras.models import CameraModel
+        cam_res = await db.execute(select(CameraModel).where(CameraModel.video_source_id == source_id))
+        cameras = list(cam_res.scalars().all())
+        for cam in cameras:
+            cam.video_source_id = None
+
+        file_path_to_delete = None
+        if delete_file and source.file_path and not source.file_path.startswith(("http://", "https://", "rtsp://", "rtmp://")):
+            file_path_to_delete = Path(source.file_path).resolve()
+
+        await db.delete(source)
+        await db.commit()
+
+        if file_path_to_delete and file_path_to_delete.exists() and file_path_to_delete.is_file():
+            try:
+                file_path_to_delete.unlink()
+                logger.info(f"Deleted physical video file: {file_path_to_delete}")
+            except Exception as e:
+                logger.warning(f"Could not delete physical file '{file_path_to_delete}': {e}")
+
+        return True
+
 
 video_source_service = VideoSourceService()

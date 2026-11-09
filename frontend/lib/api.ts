@@ -130,6 +130,16 @@ export async function probeVideoSource(pathOrUrl: string): Promise<VideoSourcePr
   return res.json();
 }
 
+export async function deleteVideoSource(id: string, deleteFile: boolean = true): Promise<void> {
+  const res = await fetch(`${API_BASE}/video-sources/${id}?delete_file=${deleteFile}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: "Failed to delete video source" }));
+    throw new Error(err.detail || "Failed to delete video source");
+  }
+}
+
 export async function fetchRTSPStats(): Promise<any> {
   const res = await fetch(`${API_BASE}/rtsp/stats`);
   if (!res.ok) throw new Error("Failed to fetch RTSP statistics");

@@ -82,3 +82,15 @@ async def upload_video_file(
             source_type="local",
         ),
     )
+
+
+@router.delete("/{source_id}", status_code=204)
+async def delete_video_source(
+    source_id: str,
+    delete_file: bool = Query(True, description="Also permanently delete file from disk if local"),
+    db: AsyncSession = Depends(get_db_session),
+):
+    success = await video_source_service.delete_source(db, source_id, delete_file=delete_file)
+    if not success:
+        raise HTTPException(status_code=404, detail="Video source not found")
+    return None

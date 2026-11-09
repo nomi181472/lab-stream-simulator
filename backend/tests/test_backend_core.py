@@ -218,3 +218,71 @@ async def test_human_readable_and_unforgettable_camera_ids():
         # Clean up
         await camera_service.delete_camera(db, "gate-north-01")
         await camera_service.delete_camera(db, "front-entrance-camera-2")
+
+
+@pytest.mark.asyncio
+async def test_delete_video_source():
+    import tempfile
+    import uuid
+    from pathlib import Path
+    from backend.app.features.video_sources.schemas import VideoSourceCreate
+
+    unique_suffix = uuid.uuid4().hex[:6]
+    test_cam_id = f"cam-del-{unique_suffix}"
+
+    with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as tmp:
+        tmp.write(b"fake video content")
+        tmp_path = Path(tmp.name)
+
+    assert tmp_path.exists()
+
+    async with async_session_maker() as db:
+        # 1. Register a video source pointing to tmp_path
+        source = await video_source_service.register_source(
+            db,
+            VideoSourceCreate(
+                name="Temp Test Video",
+                file_path=str(tmp_path),
+                source_type="local",
+            ),
+        )
+        assert source is not None
+        source_id = source.id
+
+        # 2. Link a camera to this source
+        cam = await camera_service.create_camera(
+            db,
+            CameraCreate(
+                id=test_cam_id,
+                name="Source Test Cam",
+                video_source_id=source_id,
+            ),
+        )
+        assert cam.video_source_id == source_id
+
+        # 3. Test HTTP DELETE API
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            # Delete with delete_file=True
+            del_res = await client.delete(f"/api/v1/video-sources/{source_id}?delete_file=true")
+            assert del_res.status_code == 204
+
+            # Verify 404 on subsequent delete
+            del_404 = await client.delete(f"/api/v1/video-sources/{source_id}")
+            assert del_404.status_code == 404
+
+        # 4. Verify DB record is gone
+        fetched_source = await video_source_service.get_source(db, source_id)
+        assert fetched_source is None
+
+        # 5. Verify physical file is deleted from disk
+        assert not tmp_path.exists()
+
+        # 6. Verify camera's video_source_id was unbound / cleared
+        fetched_cam = await camera_service.get_camera(db, test_cam_id)
+        assert fetched_cam is not None
+        assert fetched_cam.video_source_id is None
+
+        # Clean up camera
+        await camera_service.delete_camera(db, test_cam_id)
+
