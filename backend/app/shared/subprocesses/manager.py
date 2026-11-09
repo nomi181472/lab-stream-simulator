@@ -32,6 +32,33 @@ class ProcessInfo:
         self.task: Optional[asyncio.Task] = None
 
 
+async def safe_close_process(proc: Optional[asyncio.subprocess.Process], timeout: float = 3.0) -> None:
+    """Cleanly terminate, wait for, and close an asyncio subprocess and its transport."""
+    if proc is None:
+        return
+
+    try:
+        if proc.returncode is None:
+            try:
+                proc.terminate()
+                await asyncio.wait_for(proc.wait(), timeout=timeout)
+            except (asyncio.TimeoutError, ProcessLookupError):
+                try:
+                    proc.kill()
+                    await asyncio.wait_for(proc.wait(), timeout=1.0)
+                except Exception:
+                    pass
+            except Exception:
+                pass
+    finally:
+        transport = getattr(proc, "_transport", None)
+        if transport is not None and not transport.is_closing():
+            try:
+                transport.close()
+            except Exception:
+                pass
+
+
 class SubprocessManager:
     def __init__(self):
         self.processes: Dict[str, ProcessInfo] = {}
@@ -62,8 +89,8 @@ class SubprocessManager:
         logger.info(f"Starting embedded MediaMTX: {' '.join(cmd)}")
         self.mediamtx_process = await asyncio.create_subprocess_exec(
             *cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL,
         )
 
         # Wait for MediaMTX API to become responsive
@@ -164,12 +191,15 @@ class SubprocessManager:
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
-        stdout, stderr = await proc.communicate()
-        if proc.returncode != 0:
-            err = stderr.decode(errors="replace").strip()
-            raise RuntimeError(f"FFprobe failed with code {proc.returncode}: {err}")
+        try:
+            stdout, stderr = await proc.communicate()
+            if proc.returncode != 0:
+                err = stderr.decode(errors="replace").strip()
+                raise RuntimeError(f"FFprobe failed with code {proc.returncode}: {err}")
 
-        return json.loads(stdout.decode(errors="replace"))
+            return json.loads(stdout.decode(errors="replace"))
+        finally:
+            await safe_close_process(proc)
 
     async def start_camera_stream(
         self,
@@ -190,21 +220,23 @@ class SubprocessManager:
         base_delay = 1.0
 
         while info.should_run:
+            proc = None
             try:
                 logger.info(f"Starting camera process: {info.camera_id}", extra={"camera_id": info.camera_id})
                 info.start_time = datetime.now(timezone.utc)
-                info.process = await asyncio.create_subprocess_exec(
+                proc = await asyncio.create_subprocess_exec(
                     *info.command,
-                    stdout=asyncio.subprocess.PIPE,
+                    stdout=asyncio.subprocess.DEVNULL,
                     stderr=asyncio.subprocess.PIPE,
                 )
-                stdout, stderr = await info.process.communicate()
-                return_code = info.process.returncode
+                info.process = proc
+                _, stderr = await proc.communicate()
+                return_code = proc.returncode
 
                 if not info.should_run:
                     break
 
-                err_msg = stderr.decode(errors="replace").strip()
+                err_msg = stderr.decode(errors="replace").strip() if stderr else ""
                 info.last_error = err_msg or f"Exited with code {return_code}"
                 logger.warning(
                     f"Camera process {info.camera_id} exited with code {return_code}: {info.last_error[:200]}",
@@ -236,6 +268,11 @@ class SubprocessManager:
             except Exception as e:
                 logger.error(f"Unexpected supervisor error for {info.camera_id}: {e}")
                 await asyncio.sleep(2.0)
+            finally:
+                if proc is not None:
+                    await safe_close_process(proc)
+                    if info.process is proc:
+                        info.process = None
 
     async def stop_camera_stream(self, camera_id: str) -> None:
         """Gracefully stop and clean up a camera streaming worker."""
@@ -246,16 +283,14 @@ class SubprocessManager:
         info.should_run = False
         if info.task and not info.task.done():
             info.task.cancel()
-
-        if info.process and info.process.returncode is None:
             try:
-                info.process.terminate()
-                await asyncio.wait_for(info.process.wait(), timeout=3.0)
-            except (asyncio.TimeoutError, ProcessLookupError):
-                try:
-                    info.process.kill()
-                except ProcessLookupError:
-                    pass
+                await asyncio.wait_for(info.task, timeout=2.0)
+            except (asyncio.CancelledError, asyncio.TimeoutError, Exception):
+                pass
+
+        if info.process:
+            await safe_close_process(info.process)
+            info.process = None
 
     async def stop_all(self) -> None:
         """Stop all running camera workers and media processes."""
@@ -263,15 +298,9 @@ class SubprocessManager:
         for cid in camera_ids:
             await self.stop_camera_stream(cid)
 
-        if self.mediamtx_process and self.mediamtx_process.returncode is None:
-            try:
-                self.mediamtx_process.terminate()
-                await asyncio.wait_for(self.mediamtx_process.wait(), timeout=3.0)
-            except Exception:
-                try:
-                    self.mediamtx_process.kill()
-                except Exception:
-                    pass
+        if self.mediamtx_process:
+            await safe_close_process(self.mediamtx_process)
+            self.mediamtx_process = None
 
 
 process_manager = SubprocessManager()

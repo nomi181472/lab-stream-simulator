@@ -2,6 +2,9 @@
 
 All notable changes to the StreamLab project are documented in this file.
 
+## [1.0.9] - 2026-11-09
+- fix(subprocesses): resolve Windows asyncio closed pipe exception and improve subprocess transport teardown
+
 ## [1.0.8] - 2026-11-09
 - feat(video-sources): add option in UI and API to delete unwanted videos from library and disk
 

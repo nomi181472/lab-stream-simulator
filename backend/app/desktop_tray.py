@@ -23,6 +23,9 @@ if getattr(sys, "frozen", False):
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from backend.app.shared.patch_windows import patch_windows_asyncio
+patch_windows_asyncio()
+
 from PIL import Image, ImageDraw
 import uvicorn
 
@@ -62,6 +65,7 @@ class StreamLabTrayApp:
 
     def start_uvicorn(self):
         """Run uvicorn server in background thread."""
+        patch_windows_asyncio()
         config = uvicorn.Config(
             app=app,
             host=settings.HOST,

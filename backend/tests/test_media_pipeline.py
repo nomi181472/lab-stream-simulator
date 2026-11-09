@@ -14,7 +14,7 @@ from backend.app.features.cameras.service import camera_service
 from backend.app.features.video_sources.service import video_source_service
 from backend.app.shared.configuration.config import settings
 from backend.app.shared.database.database import async_session_maker, init_db
-from backend.app.shared.subprocesses.manager import process_manager
+from backend.app.shared.subprocesses.manager import process_manager, safe_close_process
 
 
 @pytest.mark.asyncio
@@ -75,10 +75,13 @@ async def test_persistent_media_pipeline_and_overlays():
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
-        stdout, stderr = await asyncio.wait_for(rtsp_proc.communicate(), timeout=8.0)
-        assert rtsp_proc.returncode == 0, f"RTSP probe failed: {stderr.decode()}"
-        assert b"video" in stdout
-        assert b"h264" in stdout
+        try:
+            stdout, stderr = await asyncio.wait_for(rtsp_proc.communicate(), timeout=8.0)
+            assert rtsp_proc.returncode == 0, f"RTSP probe failed: {stderr.decode()}"
+            assert b"video" in stdout
+            assert b"h264" in stdout
+        finally:
+            await safe_close_process(rtsp_proc)
 
         # 3. Probe RTMP stream with ffprobe
         rtmp_url = f"rtmp://127.0.0.1:{settings.RTMP_PORT}/cameras/{cam_id}/main"
@@ -94,9 +97,12 @@ async def test_persistent_media_pipeline_and_overlays():
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
-        rtmp_out, rtmp_err = await asyncio.wait_for(rtmp_proc.communicate(), timeout=8.0)
-        assert rtmp_proc.returncode == 0, f"RTMP probe failed: {rtmp_err.decode()}"
-        assert b"video" in rtmp_out
+        try:
+            rtmp_out, rtmp_err = await asyncio.wait_for(rtmp_proc.communicate(), timeout=8.0)
+            assert rtmp_proc.returncode == 0, f"RTMP probe failed: {rtmp_err.decode()}"
+            assert b"video" in rtmp_out
+        finally:
+            await safe_close_process(rtmp_proc)
 
         # 4. Extract real live snapshot
         from backend.app.features.snapshots.service import snapshot_service
@@ -110,3 +116,4 @@ async def test_persistent_media_pipeline_and_overlays():
 
         # Clean up camera
         await camera_service.delete_camera(db, cam_id)
+        await process_manager.stop_all()

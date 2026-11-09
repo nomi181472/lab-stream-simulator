@@ -13,7 +13,7 @@ from backend.app.features.cameras.models import CameraModel
 from backend.app.features.video_sources.models import VideoSourceModel
 from backend.app.shared.configuration.config import settings
 from backend.app.shared.logging.logger import get_logger
-from backend.app.shared.subprocesses.manager import process_manager
+from backend.app.shared.subprocesses.manager import process_manager, safe_close_process
 
 logger = get_logger(__name__, feature="snapshots")
 
@@ -46,6 +46,7 @@ class SnapshotService:
                 "-q:v", "2",
                 "pipe:1",
             ]
+            proc = None
             try:
                 proc = await asyncio.create_subprocess_exec(
                     *cmd,
@@ -57,6 +58,9 @@ class SnapshotService:
                     return stdout
             except Exception:
                 pass
+            finally:
+                if proc is not None:
+                    await safe_close_process(proc)
 
         # Camera stopped or RTSP stream not actively publishing: grab frame from source video file
         source_file = None
@@ -96,11 +100,9 @@ class SnapshotService:
                 raise RuntimeError(f"FFmpeg snapshot failed (code {proc.returncode}): {err[:200]}")
             return stdout
         except asyncio.TimeoutError:
-            try:
-                proc.kill()
-            except Exception:
-                pass
             raise TimeoutError("FFmpeg snapshot extraction timed out")
+        finally:
+            await safe_close_process(proc)
 
 
 snapshot_service = SnapshotService()

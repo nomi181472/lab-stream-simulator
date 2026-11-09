@@ -150,6 +150,7 @@ class TestOrchestrator:
 
         # Execute test runner
         start = time.time()
+        proc = None
         try:
             env = dict(os.environ)
             env["STREAMLAB_CAMERA_ID"] = camera_id
@@ -231,6 +232,10 @@ class TestOrchestrator:
                     error_message=str(e),
                 )
             ]
+        finally:
+            if proc is not None:
+                from backend.app.shared.subprocesses.manager import safe_close_process
+                await safe_close_process(proc)
 
 
 test_orchestrator = TestOrchestrator()

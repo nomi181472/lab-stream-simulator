@@ -88,11 +88,8 @@ async def stream_camera_mjpeg(camera_id: str):
         except Exception:
             pass
         finally:
-            try:
-                proc.terminate()
-                await proc.wait()
-            except Exception:
-                pass
+            from backend.app.shared.subprocesses.manager import safe_close_process
+            await safe_close_process(proc)
 
     return StreamingResponse(
         frame_generator(),

@@ -125,9 +125,6 @@ async def websocket_camera_video_stream(websocket: WebSocket, camera_id: str):
     except Exception as e:
         logger.debug(f"WebSocket video stream error for camera {camera_id}: {e}")
     finally:
-        try:
-            proc.terminate()
-            await proc.wait()
-        except Exception:
-            pass
+        from backend.app.shared.subprocesses.manager import safe_close_process
+        await safe_close_process(proc)
 

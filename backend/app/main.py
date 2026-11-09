@@ -5,8 +5,8 @@ Main FastAPI Application Entrypoint.
 
 import sys
 import asyncio
-if sys.platform == "win32":
-    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+from backend.app.shared.patch_windows import patch_windows_asyncio
+patch_windows_asyncio()
 
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
@@ -135,7 +135,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="StreamLab",
     description="Multi-Protocol IP Camera Simulator & Interoperability Lab",
-    version="1.0.8",
+    version="1.0.9",
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",
