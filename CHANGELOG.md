@@ -2,6 +2,9 @@
 
 All notable changes to the StreamLab project are documented in this file.
 
+## [1.0.10] - 2026-11-10
+- fix(asyncio): prevent WinError 64 (ERROR_NETNAME_DELETED) on client reconnects/reloads from closing server listening socket and causing connection refused
+
 ## [1.0.9] - 2026-11-09
 - fix(subprocesses): resolve Windows asyncio closed pipe exception and improve subprocess transport teardown
 
